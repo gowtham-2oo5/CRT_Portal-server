@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: Core-Server
+  datasource:
+    username: root
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/crt_portal
+  jpa:
+    hibernate:
+      ddl-auto: update
+  data:
+    jdbc:
+      dialect: mysql
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: gowtham.ala12345@gmail.com
+    password: uygm lawt nzvd qkrg
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /
+  api-docs:
+    enabled: true
+    path: /api-docs
+
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  expiration: 86400000
+  refresh-token:
+    expiration: 604800000
+
+client:
+  url: ${CLIENT_URL:http://localhost:3000}
+
+server:
+  port: 8080
