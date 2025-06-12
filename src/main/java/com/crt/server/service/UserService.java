@@ -1,7 +1,6 @@
 package com.crt.server.service;
 
 import com.crt.server.dto.AuthResponseDTO;
-import com.crt.server.dto.UpdatePasswordDTO;
 import com.crt.server.dto.UserDTO;
 
 import java.util.List;

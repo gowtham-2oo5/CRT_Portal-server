@@ -1,0 +1,6 @@
+name,email,phone,regNum,department,batch
+John Doe,john.doe@example.com,1234567890,REG001,Computer Science,Y22
+Jane Smith,jane.smith@example.com,2345678901,REG002,Electrical Engineering,Y23
+Bob Johnson,bob.johnson@example.com,3456789012,REG003,Mechanical Engineering,Y24
+Alice Brown,alice.brown@example.com,4567890123,REG004,Computer Science,Y22
+Charlie Wilson,charlie.wilson@example.com,5678901234,REG005,Electrical Engineering,Y23 

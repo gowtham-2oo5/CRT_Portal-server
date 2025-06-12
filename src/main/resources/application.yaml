@@ -43,3 +43,18 @@ client:
 
 server:
   port: 8080
+  tomcat:
+    max-http-form-post-size: 10MB
+    max-swallow-size: 10MB
+    connection-timeout: 20000
+    max-keep-alive-requests: 100
+    max-connections: 10000
+    accept-count: 100
+    threads:
+      max: 200
+      min-spare: 10
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: never
+    include-exception: false

@@ -1,0 +1,7 @@
+block,floor,roomNumber,roomType,capacity
+R,6,01,LAB,30
+R,6,02,LECTURE_ROOM,40
+R,6,05,LAB,25
+R,6,06,LECTURE_ROOM,35
+R,6,09,LAB,20
+R,6,10,LECTURE_ROOM,45 

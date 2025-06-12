@@ -1,7 +1,14 @@
 package com.crt.server.service.impl;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.crt.server.dto.AuthResponseDTO;
-import com.crt.server.dto.UpdatePasswordDTO;
 import com.crt.server.dto.UserDTO;
 import com.crt.server.exception.ResourceNotFoundException;
 import com.crt.server.model.User;
@@ -9,14 +16,8 @@ import com.crt.server.repository.UserRepository;
 import com.crt.server.service.EmailService;
 import com.crt.server.service.UserService;
 import com.crt.server.util.PasswordGenerator;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
