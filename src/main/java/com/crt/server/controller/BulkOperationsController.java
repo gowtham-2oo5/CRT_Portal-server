@@ -124,7 +124,6 @@ public class BulkOperationsController {
             BufferedReader reader = new BufferedReader(new InputStreamReader(studentsCSV.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
-                // Assuming each line contains just the registration number
                 regNums.add(line.trim());
             }
             SectionDTO updatedSection = sectionService.registerStudents(sectionId, regNums);

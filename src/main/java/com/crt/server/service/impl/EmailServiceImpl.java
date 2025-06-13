@@ -22,81 +22,39 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendPasswordEmail(String to, String username, String password) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setTo(to);
-            helper.setSubject("Your Account Credentials");
-
-            String emailContent = buildPasswordEmailContent(username, password);
-            helper.setText(emailContent, true);
-            mailSender.send(message);
-
-            log.info("Password email sent to: {}", to);
-        } catch (Exception e) {
-            log.error("Failed to send password email: {}", e.getMessage());
-            throw new RuntimeException("Failed to send password email", e);
-        }
+        sendEmail(to, "Your Account Credentials", buildPasswordEmailContent(username, password), "password email");
     }
 
     @Override
     public void sendPasswordResetEmail(String to, String resetToken) {
+        sendEmail(to, "Password Reset Request", buildPasswordResetEmailContent(resetToken), "password reset email");
+    }
+
+    @Override
+    public void sendLoginOtp(String otp, String mail) {
+        log.info("Login OTP: {}", otp);
+        //sendEmail(mail, "Your Login OTP Code", buildOtpEmailContent(otp), "OTP");
+    }
+
+    @Override
+    public void sendStudentAccountConfirmationMail(String email, AccountConfirmationMailDTO student) {
+        sendEmail(email, "Welcome to Course Registration Portal", buildStudentConfirmationEmailContent(student),
+                "student confirmation email");
+    }
+
+    private void sendEmail(String to, String subject, String content, String emailType) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(to);
-            helper.setSubject("Password Reset Request");
-
-            String emailContent = buildPasswordResetEmailContent(resetToken);
-            helper.setText(emailContent, true);
+            helper.setSubject(subject);
+            helper.setText(content, true);
             mailSender.send(message);
-
-            log.info("Password reset email sent to: {}", to);
+            log.info("{} sent to: {}", emailType, to);
         } catch (Exception e) {
-            log.error("Failed to send password reset email: {}", e.getMessage());
-            throw new RuntimeException("Failed to send password reset email", e);
-        }
-    }
-
-    @Override
-    public void sendLoginOtp(String otp, String mail) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setTo(mail);
-            helper.setSubject("Your Login OTP Code");
-
-            String emailContent = buildOtpEmailContent(otp);
-            helper.setText(emailContent, true);
-            mailSender.send(message);
-
-            log.info("OTP sent to: {}", mail);
-        } catch (Exception e) {
-            log.error("Failed to send OTP: {}", e.getMessage());
-            throw new RuntimeException("Failed to send OTP", e);
-        }
-    }
-
-    @Override
-    public void sendStudentAccountConfirmationMail(String email, AccountConfirmationMailDTO student) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setTo(email);
-            helper.setSubject("Welcome to Course Registration Portal");
-
-            String emailContent = buildStudentConfirmationEmailContent(student);
-            helper.setText(emailContent, true);
-            mailSender.send(message);
-
-            log.info("Student confirmation email sent to: {}", email);
-        } catch (Exception e) {
-            log.error("Failed to send student confirmation email: {}", e.getMessage());
-            throw new RuntimeException("Failed to send student confirmation email", e);
+            log.error("Failed to send {}: {}", emailType, e.getMessage());
+            throw new RuntimeException("Failed to send " + emailType, e);
         }
     }
 

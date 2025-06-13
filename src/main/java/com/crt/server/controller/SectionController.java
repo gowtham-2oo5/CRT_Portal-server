@@ -30,6 +30,29 @@ public class SectionController {
         return ResponseEntity.ok(sectionService.createSection(createSectionDTO));
     }
 
+    @GetMapping("/{sectionId}")
+    public ResponseEntity<SectionDTO> getSection(@PathVariable UUID sectionId) {
+        return ResponseEntity.ok(sectionService.getSection(sectionId));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<SectionDTO>> getAllSections() {
+        return ResponseEntity.ok(sectionService.getAllSections());
+    }
+
+    @PutMapping("/{sectionId}")
+    public ResponseEntity<SectionDTO> updateSection(
+            @PathVariable UUID sectionId,
+            @RequestBody CreateSectionDTO updateSectionDTO) {
+        return ResponseEntity.ok(sectionService.updateSection(sectionId, updateSectionDTO));
+    }
+
+    @DeleteMapping("/{sectionId}")
+    public ResponseEntity<Void> deleteSection(@PathVariable UUID sectionId) {
+        sectionService.deleteSection(sectionId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{sectionId}/students")
     public ResponseEntity<?> registerStudents(
             @PathVariable UUID sectionId,
@@ -73,5 +96,12 @@ public class SectionController {
     @GetMapping("/trainer/{trainerId}")
     public ResponseEntity<List<SectionDTO>> getSectionsByTrainer(@PathVariable UUID trainerId) {
         return ResponseEntity.ok(sectionService.getSectionsByTrainer(trainerId));
+    }
+
+    @PutMapping("/student/{studentId}/section/{sectionId}")
+    public ResponseEntity<SectionDTO> updateStudentSection(
+            @PathVariable UUID studentId,
+            @PathVariable UUID sectionId) {
+        return ResponseEntity.ok(sectionService.updateStudentSection(studentId, sectionId));
     }
 }
