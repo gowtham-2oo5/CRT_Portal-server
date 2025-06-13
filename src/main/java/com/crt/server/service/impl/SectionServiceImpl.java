@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.HashSet;
 
 @Service
 public class SectionServiceImpl implements SectionService {
@@ -36,14 +37,53 @@ public class SectionServiceImpl implements SectionService {
                 .orElseThrow(() -> new RuntimeException("Trainer not found"));
 
         Section section = new Section();
-        section.setName(trainer.getSn() + " " + createSectionDTO.getSectionName()); // Format: "TRAINER_SN
-                                                                                    // InputSectionName"
+        section.setName(trainer.getSn() + " " + createSectionDTO.getSectionName());
         section.setTrainer(trainer);
-        section.setStrength(0); // Initial strength is 0
-        section.setCapacity(30); // Default capacity
+        section.setStrength(0);
+        section.setCapacity(30);
 
         Section savedSection = sectionRepository.save(section);
         return mapToDTO(savedSection);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SectionDTO getSection(UUID sectionId) {
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Section not found"));
+        return mapToDTO(section);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SectionDTO> getAllSections() {
+        return sectionRepository.findAll().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public SectionDTO updateSection(UUID sectionId, CreateSectionDTO updateSectionDTO) {
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Section not found"));
+
+        CRT_Trainer trainer = trainerRepository.findById(updateSectionDTO.getTrainerId())
+                .orElseThrow(() -> new RuntimeException("Trainer not found"));
+
+        section.setName(trainer.getSn() + " " + updateSectionDTO.getSectionName());
+        section.setTrainer(trainer);
+
+        Section updatedSection = sectionRepository.save(section);
+        return mapToDTO(updatedSection);
+    }
+
+    @Override
+    @Transactional
+    public void deleteSection(UUID sectionId) {
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Section not found"));
+        sectionRepository.delete(section);
     }
 
     @Override
@@ -54,35 +94,53 @@ public class SectionServiceImpl implements SectionService {
         List<Student> students = studentRepository.findByRegNumIn(regNums);
 
         section.getStudents().addAll(students);
+        section.setStrength(section.getStudents().size());
         Section updatedSection = sectionRepository.save(section);
         return mapToDTO(updatedSection);
     }
 
+    @Override
     @Transactional(readOnly = true)
     public List<SectionDTO> getSectionsByTrainer(UUID trainerId) {
         CRT_Trainer trainer = trainerRepository.findById(trainerId)
                 .orElse(null);
-        if(trainer == null) {
+        if (trainer == null) {
             return null;
         }
         List<Section> sections = sectionRepository.findByTrainer(trainer);
         return sections.stream()
-                .map(section -> {
-                    SectionDTO dto = new SectionDTO();
-                    dto.setId(section.getId());
-                    dto.setName(section.getName());
-                    dto.setTrainer(mapTrainerToDTO(section.getTrainer()));
-
-                    Set<StudentDTO> studentDTOs = section.getStudents()
-                            .stream()
-                            .map(this::mapStudentToDTO)
-                            .collect(Collectors.toSet());
-                    dto.setStudents(studentDTOs);
-
-                    dto.setStrength(section.getStrength());
-                    return dto;
-                })
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public SectionDTO updateStudentSection(UUID studentId, UUID sectionId) {
+        // Get student
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        // Get current section using a separate query
+        Section currentSection = sectionRepository.findByStudentsContaining(student)
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        // Remove from current section if exists
+        if (currentSection != null) {
+            currentSection.getStudents().remove(student);
+            currentSection.setStrength(currentSection.getStudents().size());
+            sectionRepository.save(currentSection);
+        }
+
+        // Add to new section
+        Section newSection = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Section not found"));
+        newSection.getStudents().add(student);
+        newSection.setStrength(newSection.getStudents().size());
+        Section updatedSection = sectionRepository.save(newSection);
+
+        return mapToDTO(updatedSection);
     }
 
     private SectionDTO mapToDTO(Section section) {

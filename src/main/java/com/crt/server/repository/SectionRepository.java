@@ -11,12 +11,15 @@ import org.springframework.stereotype.Repository;
 
 import com.crt.server.model.CRT_Trainer;
 import com.crt.server.model.Section;
+import com.crt.server.model.Student;
 
 @Repository
 public interface SectionRepository extends JpaRepository<Section, UUID> {
     @Query("SELECT COUNT(s) FROM Section s WHERE s.trainer = :trainer")
     long countByTrainer(@Param("trainer") CRT_Trainer trainer);
 
-    @EntityGraph(attributePaths = {"students", "trainer", "room"})
+    @EntityGraph(attributePaths = { "students", "trainer", "room" })
     List<Section> findByTrainer(@Param("trainer") CRT_Trainer trainer);
+
+    List<Section> findByStudentsContaining(Student student);
 }
