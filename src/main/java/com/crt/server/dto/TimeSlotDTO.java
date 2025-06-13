@@ -1,5 +1,7 @@
 package com.crt.server.dto;
 
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,4 +18,7 @@ public class TimeSlotDTO {
     private String endTime;
     private boolean isBreak;
     private String breakDescription;
+    private UUID inchargeFacultyId;
+    private UUID sectionId;
+    private UUID roomId;
 }

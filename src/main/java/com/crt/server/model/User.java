@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.Set;
 
 @Data
 @Builder
@@ -43,6 +44,9 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @OneToMany(mappedBy = "inchargeFaculty")
+    private Set<TimeSlot> timeSlots;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

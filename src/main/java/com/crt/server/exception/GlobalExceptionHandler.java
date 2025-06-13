@@ -7,27 +7,31 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
         @ExceptionHandler(Exception.class)
-        public ResponseEntity<Map<String, Object>> handleException(Exception ex, HttpServletRequest request) {
+        public ResponseEntity<ErrorResponse> handleException(Exception ex, HttpServletRequest request) {
                 log.error("Unhandled exception occurred: ", ex);
 
-                Map<String, Object> body = new HashMap<>();
-                body.put("timestamp", LocalDateTime.now());
-                body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-                body.put("error", "Internal Server Error");
-                body.put("message", "An unexpected error occurred");
-                body.put("path", request.getRequestURI());
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                .message("An unexpected error occurred")
+                                .error("Internal Server Error")
+                                .timestamp(LocalDateTime.now())
+                                .path(request.getRequestURI())
+                                .build();
 
-                return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         @ExceptionHandler(ResourceNotFoundException.class)
@@ -67,5 +71,18 @@ public class GlobalExceptionHandler {
                 body.put("path", request.getRequestURI());
 
                 return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+        }
+
+        @ExceptionHandler(EntityNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleEntityNotFoundException(EntityNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                                .status(HttpStatus.NOT_FOUND.value())
+                                .message(ex.getMessage())
+                                .error("Not Found")
+                                .timestamp(LocalDateTime.now())
+                                .path(request.getDescription(false))
+                                .build();
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
         }
 }

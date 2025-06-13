@@ -5,8 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
-import java.util.Set;
 
 @Data
 @Builder
@@ -14,8 +14,7 @@ import java.util.Set;
 @AllArgsConstructor
 public class SectionScheduleDTO {
     private UUID id;
-    private SectionDTO section;
-    private RoomDTO room;
-    private Set<TimeSlotDTO> timeSlots;
-    private boolean isActive;
+    private UUID sectionId;
+    private UUID roomId;
+    private List<TimeSlotDTO> timeSlots;
 }

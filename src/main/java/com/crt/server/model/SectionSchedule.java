@@ -28,10 +28,6 @@ public class SectionSchedule {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    @ManyToMany
-    @JoinTable(name = "section_schedule_time_slots", joinColumns = @JoinColumn(name = "section_schedule_id"), inverseJoinColumns = @JoinColumn(name = "time_slot_id"))
+    @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TimeSlot> timeSlots;
-
-    @Column(nullable = false)
-    private boolean isActive;
 }
