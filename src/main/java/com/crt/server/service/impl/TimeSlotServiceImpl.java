@@ -1,5 +1,13 @@
 package com.crt.server.service.impl;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.crt.server.dto.RoomDTO;
 import com.crt.server.dto.SectionDTO;
 import com.crt.server.dto.TimeSlotDTO;
@@ -15,14 +23,8 @@ import com.crt.server.repository.SectionScheduleRepository;
 import com.crt.server.repository.TimeSlotRepository;
 import com.crt.server.repository.UserRepository;
 import com.crt.server.service.TimeSlotService;
-import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class TimeSlotServiceImpl implements TimeSlotService {

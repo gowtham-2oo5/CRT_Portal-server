@@ -38,4 +38,10 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, Integer> {
                         @Param("room") Room room,
                         @Param("startTime") String startTime,
                         @Param("endTime") String endTime);
+
+        @Query("SELECT CASE WHEN COUNT(ts) > 0 THEN true ELSE false END FROM TimeSlot ts " +
+                        "WHERE ts.id = :timeSlotId AND ts.schedule.id = :scheduleId")
+        boolean existsByIdAndScheduleId(
+                        @Param("timeSlotId") Integer timeSlotId,
+                        @Param("scheduleId") UUID scheduleId);
 }

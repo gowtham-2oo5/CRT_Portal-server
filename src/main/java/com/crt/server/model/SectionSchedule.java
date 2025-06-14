@@ -3,13 +3,16 @@ package com.crt.server.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,6 +31,22 @@ public class SectionSchedule {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<TimeSlot> timeSlots;
+    @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @Builder.Default
+    private Set<TimeSlot> timeSlots = new HashSet<>();
+
+    public void addTimeSlot(TimeSlot timeSlot) {
+        if (timeSlots == null) {
+            timeSlots = new HashSet<>();
+        }
+        timeSlots.add(timeSlot);
+        timeSlot.setSchedule(this);
+    }
+
+    public void removeTimeSlot(TimeSlot timeSlot) {
+        if (timeSlots != null) {
+            timeSlots.remove(timeSlot);
+            timeSlot.setSchedule(null);
+        }
+    }
 }

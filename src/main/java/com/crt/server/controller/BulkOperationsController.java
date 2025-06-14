@@ -1,19 +1,24 @@
 package com.crt.server.controller;
 
+import com.crt.server.dto.BulkAttendanceDTO;
+import com.crt.server.dto.BulkAttendanceResponseDTO;
 import com.crt.server.dto.RoomDTO;
 import com.crt.server.dto.SectionDTO;
 import com.crt.server.dto.StudentDTO;
 import com.crt.server.dto.TrainerDTO;
 import com.crt.server.exception.ErrorResponse;
+import com.crt.server.service.AttendanceService;
 import com.crt.server.service.RoomService;
 import com.crt.server.service.SectionService;
 import com.crt.server.service.StudentService;
 import com.crt.server.service.TrainerService;
+import com.crt.server.util.CollectionUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.Collections;
 
 @Slf4j
 @RestController
@@ -34,6 +40,7 @@ public class BulkOperationsController {
     private final RoomService roomService;
     private final TrainerService trainerService;
     private final SectionService sectionService;
+    private final AttendanceService attendanceService;
 
     @PostMapping(value = "/students/upload", consumes = "multipart/form-data")
     public ResponseEntity<?> bulkUploadStudents(@RequestParam("file") MultipartFile file) {
@@ -106,6 +113,8 @@ public class BulkOperationsController {
     public ResponseEntity<?> registerStudentsToSection(
             @RequestParam("sectionId") UUID sectionId,
             @RequestParam("studentsCSV") MultipartFile studentsCSV) {
+
+        // FIX: Use try-with-resources and thread-safe collections
         try {
             if (studentsCSV.isEmpty()) {
                 ErrorResponse error = ErrorResponse.builder()
@@ -120,14 +129,24 @@ public class BulkOperationsController {
                         .body(error);
             }
 
-            List<String> regNums = new ArrayList<>();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(studentsCSV.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                regNums.add(line.trim());
+            // FIX: Use thread-safe collection and proper resource management
+            List<String> regNums = Collections.synchronizedList(new ArrayList<>());
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(studentsCSV.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String trimmedLine = line.trim();
+                    if (!trimmedLine.isEmpty()) {
+                        regNums.add(trimmedLine);
+                    }
+                }
             }
-            SectionDTO updatedSection = sectionService.registerStudents(sectionId, regNums);
+
+            // FIX: Create defensive copy before passing to service
+            List<String> safeRegNums = CollectionUtils.defensiveCopy(regNums);
+            SectionDTO updatedSection = sectionService.registerStudents(sectionId, safeRegNums);
             return ResponseEntity.ok(updatedSection);
+
         } catch (Exception e) {
             log.error("Error in bulk student registration: {}", e.getMessage());
             ErrorResponse error = ErrorResponse.builder()
@@ -141,5 +160,49 @@ public class BulkOperationsController {
                     .status(HttpStatus.BAD_REQUEST)
                     .body(error);
         }
+    }
+
+    @PostMapping("/attendance/mark")
+    @PreAuthorize("hasAuthority('FACULTY')")
+    public ResponseEntity<BulkAttendanceResponseDTO> markBulkAttendance(
+            @RequestBody BulkAttendanceDTO bulkAttendanceDTO) {
+
+        // FIX: Create defensive copies of input collections to prevent ConcurrentModificationException
+        BulkAttendanceDTO safeBulkAttendanceDTO = createSafeBulkAttendanceDTO(bulkAttendanceDTO);
+
+        return ResponseEntity.ok(attendanceService.markBulkAttendance(safeBulkAttendanceDTO));
+    }
+
+    @PostMapping("/attendance/upload")
+    @PreAuthorize("hasAuthority('FACULTY')")
+    public ResponseEntity<BulkAttendanceResponseDTO> uploadBulkAttendance(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("timeSlotId") Integer timeSlotId,
+            @RequestParam("dateTime") String dateTime) {
+        return ResponseEntity.ok(attendanceService.processBulkAttendanceFile(file, timeSlotId, dateTime));
+    }
+
+    /**
+     * Creates a safe copy of BulkAttendanceDTO with defensive copies of all collections
+     */
+    private BulkAttendanceDTO createSafeBulkAttendanceDTO(BulkAttendanceDTO original) {
+        if (original == null) {
+            return null;
+        }
+
+        BulkAttendanceDTO safe = new BulkAttendanceDTO();
+        safe.setTimeSlotId(original.getTimeSlotId());
+        safe.setDateTime(original.getDateTime());
+
+        // Create defensive copies of collections
+        if (original.getAbsentStudentIds() != null) {
+            safe.setAbsentStudentIds(CollectionUtils.defensiveCopy(original.getAbsentStudentIds()));
+        }
+
+        if (original.getLateStudents() != null) {
+            safe.setLateStudents(CollectionUtils.defensiveCopy(original.getLateStudents()));
+        }
+
+        return safe;
     }
 }

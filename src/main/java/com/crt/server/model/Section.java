@@ -3,14 +3,16 @@ package com.crt.server.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,7 +30,7 @@ public class Section {
     @JoinColumn(name = "trainer_id", nullable = false)
     private CRT_Trainer trainer;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "section_students", joinColumns = @JoinColumn(name = "section_id"), inverseJoinColumns = @JoinColumn(name = "student_id"))
     @Builder.Default
     private Set<Student> students = new HashSet<>();
@@ -38,5 +40,4 @@ public class Section {
 
     @Column(nullable = false)
     private Integer capacity;
-
 }

@@ -1,6 +1,17 @@
 package com.crt.server.service.impl;
 
-import com.crt.server.dto.*;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.crt.server.dto.CRT_TrainerDTO;
+import com.crt.server.dto.CreateSectionDTO;
+import com.crt.server.dto.SectionDTO;
+import com.crt.server.dto.StudentDTO;
 import com.crt.server.model.CRT_Trainer;
 import com.crt.server.model.Section;
 import com.crt.server.model.Student;
@@ -8,15 +19,6 @@ import com.crt.server.repository.SectionRepository;
 import com.crt.server.repository.StudentRepository;
 import com.crt.server.repository.TrainerRepository;
 import com.crt.server.service.SectionService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.HashSet;
 
 @Service
 public class SectionServiceImpl implements SectionService {

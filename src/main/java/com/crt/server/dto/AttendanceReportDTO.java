@@ -1,26 +1,23 @@
 package com.crt.server.dto;
 
-import com.crt.server.model.Batch;
+import java.util.List;
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class StudentDTO {
-
-    private UUID id;
-    private String name;
-    private String email;
-    private String phone;
+public class AttendanceReportDTO {
+    private UUID studentId;
+    private String studentName;
     private String regNum;
-    private String department;
-    private Batch batch;
+    private long totalClasses;
+    private long absences;
     private double attendancePercentage;
-
+    private List<AttendanceDTO> attendanceRecords;
 }
