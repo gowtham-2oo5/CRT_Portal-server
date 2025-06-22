@@ -25,7 +25,7 @@ public class GlobalExceptionHandler {
 
                 ErrorResponse errorResponse = ErrorResponse.builder()
                                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                                .message("An unexpected error occurred")
+                                .message(ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred")
                                 .error("Internal Server Error")
                                 .timestamp(LocalDateTime.now())
                                 .path(request.getRequestURI())
@@ -86,3 +86,83 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
         }
 }
+        // Handle validation errors
+        @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+        public ResponseEntity<ErrorResponse> handleValidationException(
+                        org.springframework.web.bind.MethodArgumentNotValidException ex, HttpServletRequest request) {
+                StringBuilder message = new StringBuilder("Validation failed: ");
+                ex.getBindingResult().getFieldErrors().forEach(error -> 
+                        message.append(error.getField()).append(" ").append(error.getDefaultMessage()).append("; ")
+                );
+
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .message(message.toString())
+                                .error("Validation Error")
+                                .timestamp(LocalDateTime.now())
+                                .path(request.getRequestURI())
+                                .build();
+                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+
+        // Handle database constraint violations
+        @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+        public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+                        org.springframework.dao.DataIntegrityViolationException ex, HttpServletRequest request) {
+                String message = "Data integrity violation";
+                if (ex.getMessage().contains("Duplicate entry")) {
+                        message = "Duplicate entry - record already exists";
+                } else if (ex.getMessage().contains("foreign key constraint")) {
+                        message = "Cannot delete - record is referenced by other data";
+                }
+
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                                .status(HttpStatus.CONFLICT.value())
+                                .message(message)
+                                .error("Data Integrity Error")
+                                .timestamp(LocalDateTime.now())
+                                .path(request.getRequestURI())
+                                .build();
+                return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+        }
+
+        // Handle authentication errors
+        @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+        public ResponseEntity<ErrorResponse> handleBadCredentials(
+                        org.springframework.security.authentication.BadCredentialsException ex, HttpServletRequest request) {
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                                .status(HttpStatus.UNAUTHORIZED.value())
+                                .message("Invalid credentials")
+                                .error("Authentication Error")
+                                .timestamp(LocalDateTime.now())
+                                .path(request.getRequestURI())
+                                .build();
+                return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+        }
+
+        // Handle access denied errors
+        @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+        public ResponseEntity<ErrorResponse> handleAccessDenied(
+                        org.springframework.security.access.AccessDeniedException ex, HttpServletRequest request) {
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                                .status(HttpStatus.FORBIDDEN.value())
+                                .message("Access denied - insufficient permissions")
+                                .error("Authorization Error")
+                                .timestamp(LocalDateTime.now())
+                                .path(request.getRequestURI())
+                                .build();
+                return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+        }
+        // Handle custom authentication exceptions
+        @ExceptionHandler(AuthenticationException.class)
+        public ResponseEntity<ErrorResponse> handleCustomAuthenticationException(
+                        AuthenticationException ex, HttpServletRequest request) {
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                                .status(HttpStatus.UNAUTHORIZED.value())
+                                .message(ex.getMessage())
+                                .error("Authentication Failed")
+                                .timestamp(LocalDateTime.now())
+                                .path(request.getRequestURI())
+                                .build();
+                return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+        }

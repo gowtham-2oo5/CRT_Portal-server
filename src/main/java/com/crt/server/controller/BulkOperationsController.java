@@ -1,20 +1,12 @@
 package com.crt.server.controller;
 
-import com.crt.server.dto.BulkAttendanceDTO;
-import com.crt.server.dto.BulkAttendanceResponseDTO;
-import com.crt.server.dto.RoomDTO;
-import com.crt.server.dto.SectionDTO;
-import com.crt.server.dto.StudentDTO;
-import com.crt.server.dto.TrainerDTO;
+import com.crt.server.dto.*;
 import com.crt.server.exception.ErrorResponse;
-import com.crt.server.service.AttendanceService;
-import com.crt.server.service.RoomService;
-import com.crt.server.service.SectionService;
-import com.crt.server.service.StudentService;
-import com.crt.server.service.TrainerService;
+import com.crt.server.service.*;
 import com.crt.server.util.CollectionUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,21 +18,32 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.Collections;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/bulk")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyAuthority('ADMIN')")
 public class BulkOperationsController {
 
-    private final StudentService studentService;
-    private final RoomService roomService;
-    private final TrainerService trainerService;
-    private final SectionService sectionService;
-    private final AttendanceService attendanceService;
+
+    @Autowired
+    private StudentService studentService;
+
+    @Autowired
+    private RoomService roomService;
+
+    @Autowired
+    private TrainerService trainerService;
+
+    @Autowired
+    private SectionService sectionService;
+    
+    @Autowired
+    private AttendanceService attendanceService;
 
     @PostMapping(value = "/students/upload", consumes = "multipart/form-data")
     public ResponseEntity<?> bulkUploadStudents(@RequestParam("file") MultipartFile file) {
@@ -114,7 +117,6 @@ public class BulkOperationsController {
             @RequestParam("sectionId") UUID sectionId,
             @RequestParam("studentsCSV") MultipartFile studentsCSV) {
 
-        // FIX: Use try-with-resources and thread-safe collections
         try {
             if (studentsCSV.isEmpty()) {
                 ErrorResponse error = ErrorResponse.builder()

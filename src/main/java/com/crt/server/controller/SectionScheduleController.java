@@ -4,6 +4,7 @@ import com.crt.server.dto.SectionScheduleDTO;
 import com.crt.server.dto.TimeSlotDTO;
 import com.crt.server.service.SectionScheduleService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +16,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SectionScheduleController {
 
-    private final SectionScheduleService sectionScheduleService;
+    @Autowired
+    private SectionScheduleService sectionScheduleService;
 
     @PostMapping
     public ResponseEntity<SectionScheduleDTO> createSchedule(@RequestBody SectionScheduleDTO scheduleDTO) {

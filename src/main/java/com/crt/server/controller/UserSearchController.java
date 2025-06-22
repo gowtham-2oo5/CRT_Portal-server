@@ -10,9 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
-/**
- * Controller handling user search and filter operations
- */
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor

@@ -21,12 +21,6 @@ public class PasswordService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // Verify current password if provided
-        if (passwordUpdate.getCurrentPassword() != null &&
-                !passwordEncoder.matches(passwordUpdate.getCurrentPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Current password is incorrect");
-        }
-
         // Update password
         user.setPassword(passwordEncoder.encode(passwordUpdate.getNewPassword()));
         userRepository.save(user);

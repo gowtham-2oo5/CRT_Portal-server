@@ -19,4 +19,5 @@ public class UserDTO {
     private String phone;
     private String username;
     private Role role;
+    private Boolean isFirstLogin;
 }

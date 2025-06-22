@@ -2,7 +2,6 @@ package com.crt.server.controller;
 
 import com.crt.server.dto.TimeSlotDTO;
 import com.crt.server.service.TimeSlotService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +17,7 @@ public class TimeSlotController {
     private TimeSlotService timeSlotService;
 
     @PostMapping
-    public ResponseEntity<TimeSlotDTO> createTimeSlot(@Valid @RequestBody TimeSlotDTO timeSlotDTO) {
+    public ResponseEntity<TimeSlotDTO> createTimeSlot( @RequestBody TimeSlotDTO timeSlotDTO) {
         return ResponseEntity.ok(timeSlotService.createTimeSlot(timeSlotDTO));
     }
 
@@ -40,7 +39,7 @@ public class TimeSlotController {
     @PutMapping("/{id}")
     public ResponseEntity<TimeSlotDTO> updateTimeSlot(
             @PathVariable Integer id,
-            @Valid @RequestBody TimeSlotDTO timeSlotDTO) {
+            @RequestBody TimeSlotDTO timeSlotDTO) {
         return ResponseEntity.ok(timeSlotService.updateTimeSlot(id, timeSlotDTO));
     }
 

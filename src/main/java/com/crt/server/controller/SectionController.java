@@ -5,6 +5,7 @@ import com.crt.server.dto.SectionDTO;
 import com.crt.server.exception.ErrorResponse;
 import com.crt.server.service.SectionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,8 +16,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/sections")
@@ -75,7 +74,6 @@ public class SectionController {
             BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
-                // Assuming each line contains just the registration number
                 regNums.add(line.trim());
             }
             return ResponseEntity.ok(sectionService.registerStudents(sectionId, regNums));

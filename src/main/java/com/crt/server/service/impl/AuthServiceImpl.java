@@ -43,7 +43,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Generate and store OTP
         String otp = otpService.generateOTP();
-        otpService.storeOTP(user.getEmail(), otp);
+        otpService.storeOTP(loginRequest.getUsernameOrEmail(), otp);
 
         // Send OTP via email
         emailService.sendLoginOtp(otp, user.getEmail());
@@ -57,20 +57,29 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponseDTO verifyOTP(AuthRequestDTO otpVerification) {
-        // Verify user exists
-        User user = userRepository.findByEmail(otpVerification.getUsernameOrEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        String input = otpVerification.getUsernameOrEmail();
 
-        // Verify OTP
+        User user;
+        if (userRepository.existsByEmail(input)) {
+            user = userRepository.findByEmail(input)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + input));
+        } else if (userRepository.existsByUsername(input)) {
+            user = userRepository.findByUsername(input)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + input));
+        } else {
+            throw new ResourceNotFoundException("User not found with username or email: " + input);
+        }
+
         if (!otpService.verifyOTP(otpVerification.getUsernameOrEmail(), otpVerification.getOtp())) {
             throw new AuthenticationException("Invalid OTP");
         }
 
         UserDTO userDTO = userService.getUserByEmail(user.getEmail());
 
-        // Generate JWT token
         String token = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
+        System.out.println(user.isFirstLogin());
+        System.out.println("HEREES THE TOKEN RA: " + token);
 
         return AuthResponseDTO.builder()
                 .message("OTP verified successfully")

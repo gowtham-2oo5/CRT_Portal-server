@@ -6,6 +6,7 @@ import com.crt.server.exception.ErrorResponse;
 import com.crt.server.security.PasswordService;
 import com.crt.server.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,16 +14,17 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Controller handling password-related operations
- */
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class PasswordController {
 
-    private final PasswordService passwordService;
-    private final UserService userService;
+    @Autowired
+    private PasswordService passwordService;
+
+    @Autowired
+    private UserService userService;
 
     @PutMapping("/{id}/password")
     public ResponseEntity<AuthResponseDTO> updatePassword(

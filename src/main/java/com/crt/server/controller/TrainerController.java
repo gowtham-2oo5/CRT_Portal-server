@@ -5,6 +5,7 @@ import com.crt.server.exception.ErrorResponse;
 import com.crt.server.service.TrainerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TrainerController {
 
-    private final TrainerService trainerService;
+    @Autowired
+    private TrainerService trainerService;
 
     @PostMapping
     public ResponseEntity<?> createTrainer(@RequestBody TrainerDTO trainerDTO) {

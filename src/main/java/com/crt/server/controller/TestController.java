@@ -1,29 +1,25 @@
 package com.crt.server.controller;
 
+import com.crt.server.security.JwtService;
+import com.crt.server.service.EmailService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.crt.server.dto.AccountConfirmationMailDTO;
-import com.crt.server.service.EmailService;
-import com.crt.server.security.JwtService;
-
-import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/test")
 @RequiredArgsConstructor
-public class TestEmailController {
+public class TestController {
 
-    private final EmailService emailService;
-    private final JwtService jwtService;
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private JwtService jwtService;
 
     @PostMapping("/otp")
     public ResponseEntity<String> testOtpEmail(@RequestParam String email) {
@@ -55,22 +51,6 @@ public class TestEmailController {
             return ResponseEntity.ok("Reset email sent successfully");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Failed to send reset email: " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/student")
-    public ResponseEntity<String> testStudentEmail(@RequestParam String email) {
-        try {
-            AccountConfirmationMailDTO student = AccountConfirmationMailDTO.builder()
-                    .name("Test Student")
-                    .username("teststudent")
-                    .password("testpass123")
-                    .build();
-            emailService.sendStudentAccountConfirmationMail(email, student);
-            return ResponseEntity.ok("Student confirmation email sent successfully");
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body("Failed to send student confirmation email: " + e.getMessage());
         }
     }
 

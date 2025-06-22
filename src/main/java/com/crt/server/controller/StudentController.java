@@ -4,6 +4,7 @@ import com.crt.server.dto.StudentDTO;
 import com.crt.server.exception.ErrorResponse;
 import com.crt.server.service.StudentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +18,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class StudentController {
 
-    private final StudentService studentService;
+    @Autowired
+    private StudentService studentService;
 
     @PostMapping
     public ResponseEntity<?> createStudent(@RequestBody StudentDTO studentDTO) {

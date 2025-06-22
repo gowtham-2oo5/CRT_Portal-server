@@ -5,6 +5,7 @@ import com.crt.server.dto.AuthResponseDTO;
 import com.crt.server.exception.ErrorResponse;
 import com.crt.server.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,8 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    @Autowired
+    private AuthService authService;
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@RequestBody AuthRequestDTO loginRequest) {
@@ -25,6 +27,7 @@ public class AuthController {
 
     @PostMapping("/verify-otp")
     public ResponseEntity<AuthResponseDTO> verifyOTP(@RequestBody AuthRequestDTO otpVerification) {
+
         return ResponseEntity.ok(authService.verifyOTP(otpVerification));
     }
 

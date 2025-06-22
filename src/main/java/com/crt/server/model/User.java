@@ -45,6 +45,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Role role;
 
+    @Column(nullable = false)
+    private boolean isFirstLogin;
+
     @OneToMany(mappedBy = "inchargeFaculty")
     private Set<TimeSlot> timeSlots;
 

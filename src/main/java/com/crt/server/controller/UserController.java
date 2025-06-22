@@ -4,26 +4,23 @@ import com.crt.server.dto.UserDTO;
 import com.crt.server.exception.ErrorResponse;
 import com.crt.server.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Controller handling core user CRUD operations
- * All operations require ADMIN role
- */
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('ADMIN')")
+//@PreAuthorize("hasAuthority('ADMIN')")
 public class UserController {
 
-    private final UserService userService;
+    @Autowired
+    private UserService userService;
 
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody UserDTO createUserDTO) {

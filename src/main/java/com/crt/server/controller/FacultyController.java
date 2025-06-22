@@ -3,6 +3,7 @@ package com.crt.server.controller;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,10 +22,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class FacultyController {
 
-    private final TimeSlotService timeSlotService;
+    @Autowired
+    private TimeSlotService timeSlotService;
 
     @GetMapping("/time-slots")
-    @PreAuthorize("hasAuthority('FACULTY')")
+    @PreAuthorize("hasAuthority('ADMIN', 'FACULTY')")
     public ResponseEntity<List<TimeSlotDTO>> getMyTimeSlots(@RequestParam("userId") UUID userId) {
         return ResponseEntity.ok(timeSlotService.getTimeSlotsByFaculty(userId));
     }

@@ -38,10 +38,8 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Email already exists");
         }
 
-        // Generate random password
         String generatedPassword = PasswordGenerator.generatePassword();
 
-        // Create user entity
         User user = User.builder()
                 .name(createUserDTO.getName())
                 .email(createUserDTO.getEmail())
@@ -49,6 +47,7 @@ public class UserServiceImpl implements UserService {
                 .username(createUserDTO.getUsername())
                 .password(passwordEncoder.encode(generatedPassword))
                 .role(createUserDTO.getRole())
+                .isFirstLogin(true)
                 .build();
 
         // Save user
@@ -176,6 +175,7 @@ public class UserServiceImpl implements UserService {
                 .phone(user.getPhone())
                 .username(user.getUsername())
                 .role(user.getRole())
+                .isFirstLogin(user.isFirstLogin())
                 .build();
     }
 }

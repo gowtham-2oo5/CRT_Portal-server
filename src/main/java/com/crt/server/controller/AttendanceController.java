@@ -1,13 +1,9 @@
 package com.crt.server.controller;
 
-import com.crt.server.dto.AttendanceDTO;
-import com.crt.server.dto.AttendanceReportDTO;
-import com.crt.server.dto.MarkAttendanceDTO;
-import com.crt.server.dto.BulkAttendanceDTO;
-import com.crt.server.dto.BulkAttendanceResponseDTO;
-import com.crt.server.dto.SectionAttendanceRecordDTO;
+import com.crt.server.dto.*;
 import com.crt.server.service.AttendanceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,25 +15,24 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/attendance")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyAuthority('ADMIN', 'FACULTY')")
 public class AttendanceController {
 
-    private final AttendanceService attendanceService;
+    @Autowired
+    private AttendanceService attendanceService;
 
     @PostMapping("/mark")
-    @PreAuthorize("hasAuthority('FACULTY')")
     public ResponseEntity<List<AttendanceDTO>> markAttendance(@RequestBody MarkAttendanceDTO markAttendanceDTO) {
         return ResponseEntity.ok(attendanceService.markAttendance(markAttendanceDTO));
     }
 
     @PostMapping("/mark/bulk")
-    @PreAuthorize("hasAuthority('FACULTY')")
     public ResponseEntity<BulkAttendanceResponseDTO> markBulkAttendance(
             @RequestBody BulkAttendanceDTO bulkAttendanceDTO) {
         return ResponseEntity.ok(attendanceService.markBulkAttendance(bulkAttendanceDTO));
     }
 
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'FACULTY')")
     public ResponseEntity<List<AttendanceDTO>> getStudentAttendance(
             @PathVariable UUID studentId,
             @RequestParam String startDate,
@@ -49,7 +44,6 @@ public class AttendanceController {
     }
 
     @GetMapping("/time-slot/{timeSlotId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'FACULTY')")
     public ResponseEntity<List<AttendanceDTO>> getTimeSlotAttendance(
             @PathVariable Integer timeSlotId,
             @RequestParam String date) {
@@ -59,7 +53,6 @@ public class AttendanceController {
     }
 
     @GetMapping("/report/{studentId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'FACULTY')")
     public ResponseEntity<AttendanceReportDTO> getStudentAttendanceReport(
             @PathVariable UUID studentId,
             @RequestParam String startDate,
@@ -71,7 +64,6 @@ public class AttendanceController {
     }
 
     @PostMapping("/archive")
-    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> archiveAttendanceRecords(
             @RequestParam int year,
             @RequestParam int month) {
@@ -80,7 +72,6 @@ public class AttendanceController {
     }
 
     @GetMapping("/archived/student/{studentId}")
-    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<AttendanceDTO>> getArchivedStudentAttendance(
             @PathVariable UUID studentId,
             @RequestParam String startDate,
@@ -92,7 +83,6 @@ public class AttendanceController {
     }
 
     @GetMapping("/archived/report/{studentId}")
-    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<AttendanceReportDTO> getArchivedStudentAttendanceReport(
             @PathVariable UUID studentId,
             @RequestParam String startDate,
@@ -104,7 +94,6 @@ public class AttendanceController {
     }
 
     @GetMapping("/section/{sectionId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'FACULTY')")
     public ResponseEntity<List<SectionAttendanceRecordDTO>> getSectionAttendanceRecords(
             @PathVariable UUID sectionId,
             @RequestParam String startDate,

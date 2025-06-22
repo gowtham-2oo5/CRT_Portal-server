@@ -29,7 +29,7 @@ class TestEmailControllerTest {
     private JwtService jwtService;
 
     @InjectMocks
-    private TestEmailController testEmailController;
+    private TestController testEmailController;
 
     private MockMvc mockMvc;
 
