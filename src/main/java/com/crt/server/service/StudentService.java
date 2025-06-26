@@ -34,4 +34,14 @@ public interface StudentService {
      *                   students
      */
     List<StudentDTO> bulkCreateStudents(MultipartFile file) throws Exception;
+
+    /**
+     * Update CRT eligibility status for a student
+     * 
+     * @param studentId The ID of the student
+     * @param crtEligibility The new CRT eligibility status
+     * @param reason The reason for the status change
+     * @return Updated student DTO
+     */
+    StudentDTO updateCrtEligibility(UUID studentId, Boolean crtEligibility, String reason);
 }

@@ -48,6 +48,14 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private boolean isFirstLogin;
 
+    // Faculty-specific fields
+    @Enumerated(EnumType.STRING)
+    @Column
+    private Department department; // CSE, ME, CE, ECE, EEE
+
+    @Column(unique = true)
+    private String employeeId; // Faculty employee ID
+
     @OneToMany(mappedBy = "inchargeFaculty")
     private Set<TimeSlot> timeSlots;
 

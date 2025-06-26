@@ -43,6 +43,8 @@ public class StudentServiceImpl implements StudentService {
                 .regNum(studentDTO.getRegNum())
                 .department(studentDTO.getDepartment())
                 .batch(studentDTO.getBatch())
+                .crtEligibility(studentDTO.getCrtEligibility() != null ? studentDTO.getCrtEligibility() : true)
+                .feedback(studentDTO.getFeedback())
                 .build();
 
         Student savedStudent = studentRepository.save(student);
@@ -95,6 +97,14 @@ public class StudentServiceImpl implements StudentService {
         student.setRegNum(studentDTO.getRegNum());
         student.setDepartment(studentDTO.getDepartment());
         student.setBatch(studentDTO.getBatch());
+        
+        // Update CRT eligibility and feedback if provided
+        if (studentDTO.getCrtEligibility() != null) {
+            student.setCrtEligibility(studentDTO.getCrtEligibility());
+        }
+        if (studentDTO.getFeedback() != null) {
+            student.setFeedback(studentDTO.getFeedback());
+        }
 
         Student updatedStudent = studentRepository.save(student);
         return convertToDTO(updatedStudent);
@@ -139,6 +149,7 @@ public class StudentServiceImpl implements StudentService {
                         .regNum(record.get("regNum"))
                         .department(record.get("department"))
                         .batch(Batch.valueOf(record.get("batch").trim()))
+                        .crtEligibility(true) // Default to true for bulk imports
                         .build();
             });
 
@@ -152,6 +163,21 @@ public class StudentServiceImpl implements StudentService {
             log.error("Error in bulk student creation: {}", e.getMessage());
             throw new Exception("Error processing student data: " + e.getMessage());
         }
+    }
+
+    @Override
+    public StudentDTO updateCrtEligibility(UUID studentId, Boolean crtEligibility, String reason) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+
+        student.setCrtEligibility(crtEligibility);
+        student.setFeedback(reason);
+
+        Student updatedStudent = studentRepository.save(student);
+        log.info("Updated CRT eligibility for student {} (ID: {}) to {} with reason: {}", 
+                student.getRegNum(), studentId, crtEligibility, reason);
+
+        return convertToDTO(updatedStudent);
     }
 
     private void validateRequiredFields(org.apache.commons.csv.CSVRecord record) throws Exception {
@@ -180,13 +206,15 @@ public class StudentServiceImpl implements StudentService {
 
     private StudentDTO convertToDTO(Student student) {
         return StudentDTO.builder()
-                .id(student.getId())
+                .id(student.getId().toString()) // Convert UUID to String
                 .name(student.getName())
                 .email(student.getEmail())
                 .phone(student.getPhone())
                 .regNum(student.getRegNum())
                 .department(student.getDepartment())
                 .batch(student.getBatch())
+                .crtEligibility(student.getCrtEligibility())
+                .feedback(student.getFeedback())
                 .build();
     }
 }

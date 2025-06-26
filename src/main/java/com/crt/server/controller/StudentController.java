@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -85,5 +86,49 @@ public class StudentController {
     public ResponseEntity<Void> deleteStudent(@PathVariable UUID id) {
         studentService.deleteStudent(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/remove-from-crt")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> removeStudentFromCrt(
+            @PathVariable UUID id,
+            @RequestParam String reason) {
+        try {
+            StudentDTO response = studentService.updateCrtEligibility(id, false, reason);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ErrorResponse error = ErrorResponse.builder()
+                    .timestamp(LocalDateTime.now())
+                    .status(HttpStatus.NOT_FOUND.value())
+                    .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                    .message(e.getMessage())
+                    .path("/api/students/" + id + "/remove-from-crt")
+                    .build();
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(error);
+        }
+    }
+
+    @PostMapping("/{id}/add-to-crt")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> addStudentToCrt(
+            @PathVariable UUID id,
+            @RequestParam String reason) {
+        try {
+            StudentDTO response = studentService.updateCrtEligibility(id, true, reason);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ErrorResponse error = ErrorResponse.builder()
+                    .timestamp(LocalDateTime.now())
+                    .status(HttpStatus.NOT_FOUND.value())
+                    .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                    .message(e.getMessage())
+                    .path("/api/students/" + id + "/add-to-crt")
+                    .build();
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(error);
+        }
     }
 }

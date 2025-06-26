@@ -2,7 +2,7 @@ package com.crt.server.repository;
 
 import com.crt.server.model.Attendance;
 import com.crt.server.model.Student;
-import com.crt.server.model.TimeSlot;
+import com.crt.server.model.AttendanceStatus;import com.crt.server.model.TimeSlot;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -50,4 +50,13 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
         long countByDateBetween(
                         @Param("startDate") LocalDateTime startDate,
                         @Param("endDate") LocalDateTime endDate);
+    @Query("SELECT COUNT(a) FROM Attendance a WHERE a.student = :student AND a.timeSlot IN :timeSlots")
+    Long countByStudentAndTimeSlotIn(@Param("student") Student student, @Param("timeSlots") List<TimeSlot> timeSlots);
+
+    @Query("SELECT COUNT(a) FROM Attendance a WHERE a.student = :student AND a.status = :status AND a.timeSlot IN :timeSlots")
+    Long countByStudentAndStatusAndTimeSlotIn(@Param("student") Student student, @Param("status") AttendanceStatus status, @Param("timeSlots") List<TimeSlot> timeSlots);
+
+    Optional<Attendance> findTopByStudentAndStatusOrderByDateDesc(Student student, AttendanceStatus status);
+
+    List<Attendance> findByStudentAndTimeSlotInOrderByDateDesc(Student student, List<TimeSlot> timeSlots);
 }

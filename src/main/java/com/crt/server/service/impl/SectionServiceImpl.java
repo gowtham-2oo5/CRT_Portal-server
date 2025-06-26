@@ -166,7 +166,7 @@ public class SectionServiceImpl implements SectionService {
 
     private StudentDTO mapStudentToDTO(Student student) {
         StudentDTO dto = new StudentDTO();
-        dto.setId(student.getId());
+        dto.setId(student.getId().toString()); // Convert UUID to String
         dto.setRegNum(student.getRegNum());
         dto.setName(student.getName());
         dto.setEmail(student.getEmail());

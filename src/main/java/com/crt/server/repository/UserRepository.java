@@ -1,5 +1,6 @@
 package com.crt.server.repository;
 
+import com.crt.server.model.Role;
 import com.crt.server.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -18,4 +19,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByEmail(String email);
 
     boolean existsByEmailOrUsername(String email, String username);
+    
+    Long countByRole(Role role);
 }

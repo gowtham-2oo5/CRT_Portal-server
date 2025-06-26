@@ -228,7 +228,7 @@ class SectionServiceImplTest {
     void updateStudentSection_WithValidData_ShouldUpdateSection() {
         // Arrange
         Section currentSection = Section.builder()
-                .id(UUID.randomUUID())
+                .id(UUID.randomUUID().toString())
                 .name("Current Section")
                 .students(new HashSet<>(Collections.singletonList(testStudent)))
                 .strength(1)

@@ -1,70 +1,49 @@
 package com.crt.server.controller;
 
-import com.crt.server.security.JwtService;
-import com.crt.server.service.EmailService;
+import com.crt.server.dto.ActivityLogDTO;
+import com.crt.server.service.ActivityLogService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/test")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ADMIN')")
 public class TestController {
 
-    @Autowired
-    private EmailService emailService;
+    private final ActivityLogService activityLogService;
 
-    @Autowired
-    private JwtService jwtService;
+    @PostMapping("/add-sample-activity")
+    public ResponseEntity<String> addSampleActivity() {
+        // Create a sample activity log entry
+        ActivityLogDTO sampleLog = ActivityLogDTO.builder()
+                .action("TEST_USER - Test Faculty posted attendance for Java Basics for 09:00-10:30 and 85.5%")
+                .timestamp(LocalDateTime.now())
+                .facultyId("TEST_USER")
+                .facultyName("Test Faculty")
+                .sectionName("Java Basics")
+                .timeSlotInfo("09:00-10:30")
+                .attendancePercentage(85.5)
+                .build();
 
-    @PostMapping("/otp")
-    public ResponseEntity<String> testOtpEmail(@RequestParam String email) {
+        // Manually add to the activity log (for testing purposes)
+        // Note: This is a hack for testing - normally this would be done through attendance posting
         try {
-            emailService.sendLoginOtp("123456", email);
-            return ResponseEntity.ok("OTP email sent successfully");
+            // We can't directly add to the service, so let's return a message
+            return ResponseEntity.ok("Sample activity would be added. Use attendance posting to generate real logs.");
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Failed to send OTP email: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
     }
 
-    @PostMapping("/password")
-    public ResponseEntity<String> testPasswordEmail(
-            @RequestParam String email,
-            @RequestParam String username,
-            @RequestParam String password) {
-        try {
-            emailService.sendPasswordEmail(email, username, password);
-            return ResponseEntity.ok("Password email sent successfully");
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Failed to send password email: " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/reset")
-    public ResponseEntity<String> testResetEmail(@RequestParam String email) {
-        try {
-            emailService.sendPasswordResetEmail(email, "RESET123");
-            return ResponseEntity.ok("Reset email sent successfully");
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Failed to send reset email: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/token-info")
-    public ResponseEntity<Map<String, Object>> getTokenInfo(@RequestHeader("Authorization") String authHeader) {
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-
-            Map<String, Object> tokenInfo = new HashMap<>();
-            tokenInfo.put("username", jwtService.extractUsername(token));
-            tokenInfo.put("role", jwtService.extractRole(token));
-
-            return ResponseEntity.ok(tokenInfo);
-        }
-        return ResponseEntity.badRequest().body(Map.of("error", "No valid token provided"));
+    @GetMapping("/recent-activities")
+    public ResponseEntity<List<ActivityLogDTO>> getTestActivities() {
+        List<ActivityLogDTO> activities = activityLogService.getRecentActivities(10);
+        return ResponseEntity.ok(activities);
     }
 }

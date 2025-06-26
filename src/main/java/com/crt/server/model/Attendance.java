@@ -40,7 +40,9 @@ public class Attendance {
 
     @Column(nullable = false)
     private LocalDateTime date;
-
+    @ManyToOne
+    @JoinColumn(name = "attendance_session_id")
+    private AttendanceSession attendanceSession; // Link to the session this attendance belongs to
     @PrePersist
     protected void onCreate() {
         postedAt = LocalDateTime.now();

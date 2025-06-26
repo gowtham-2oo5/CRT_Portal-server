@@ -100,9 +100,21 @@ student_data='{
     "name": "Test Student",
     "email": "student@example.com",
     "phone": "9876543210",
-    "rollNumber": "ST001"
+    "regNum": "ST001",
+    "department": "Computer Science",
+    "batch": "BATCH_2024",
+    "crtEligibility": true
 }'
 make_request "POST" "/api/students" "$student_data"
+echo
+
+# Test 6c: CRT Eligibility Management
+echo "6c. Remove Student from CRT (should fail without auth)"
+make_request "POST" "/api/students/123e4567-e89b-12d3-a456-426614174000/remove-from-crt?reason=Poor%20performance"
+echo
+
+echo "6d. Add Student to CRT (should fail without auth)"
+make_request "POST" "/api/students/123e4567-e89b-12d3-a456-426614174000/add-to-crt?reason=Improved%20performance"
 echo
 
 # Test 7: Trainer Operations

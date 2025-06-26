@@ -38,6 +38,13 @@ public class Student {
     @Column(nullable = false)
     private Batch batch;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean crtEligibility = true;
+
+    @Column(length = 500)
+    private String feedback;
+
     @ManyToMany(mappedBy = "students")
     private Set<Section> sections;
 

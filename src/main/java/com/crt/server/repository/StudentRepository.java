@@ -27,4 +27,6 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     List<Student> findByIdIn(List<UUID> ids);
 
     List<Student> findByRegNumIn(List<String> regNums);
+    
+    Long countByCrtEligibility(Boolean crtEligibility);
 }
