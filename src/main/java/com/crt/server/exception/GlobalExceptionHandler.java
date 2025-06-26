@@ -85,7 +85,7 @@ public class GlobalExceptionHandler {
                                 .build();
                 return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
         }
-}
+
         // Handle validation errors
         @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
         public ResponseEntity<ErrorResponse> handleValidationException(
@@ -153,6 +153,7 @@ public class GlobalExceptionHandler {
                                 .build();
                 return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
         }
+
         // Handle custom authentication exceptions
         @ExceptionHandler(AuthenticationException.class)
         public ResponseEntity<ErrorResponse> handleCustomAuthenticationException(
@@ -166,3 +167,4 @@ public class GlobalExceptionHandler {
                                 .build();
                 return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
         }
+}

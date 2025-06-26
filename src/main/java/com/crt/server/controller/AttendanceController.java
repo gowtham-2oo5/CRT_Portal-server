@@ -3,15 +3,21 @@ package com.crt.server.controller;
 import com.crt.server.dto.*;
 import com.crt.server.service.AttendanceService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/attendance")
 @RequiredArgsConstructor
@@ -22,13 +28,15 @@ public class AttendanceController {
     private AttendanceService attendanceService;
 
     @PostMapping("/mark")
-    public ResponseEntity<List<AttendanceDTO>> markAttendance(@RequestBody MarkAttendanceDTO markAttendanceDTO) {
+    public ResponseEntity<List<AttendanceDTO>> markAttendance(@Valid @RequestBody MarkAttendanceDTO markAttendanceDTO) {
+        log.info("Marking attendance for: {}", markAttendanceDTO);
         return ResponseEntity.ok(attendanceService.markAttendance(markAttendanceDTO));
     }
 
     @PostMapping("/mark/bulk")
     public ResponseEntity<BulkAttendanceResponseDTO> markBulkAttendance(
-            @RequestBody BulkAttendanceDTO bulkAttendanceDTO) {
+            @Valid @RequestBody BulkAttendanceDTO bulkAttendanceDTO) {
+        log.info("Marking bulk attendance");
         return ResponseEntity.ok(attendanceService.markBulkAttendance(bulkAttendanceDTO));
     }
 
@@ -37,19 +45,27 @@ public class AttendanceController {
             @PathVariable UUID studentId,
             @RequestParam String startDate,
             @RequestParam String endDate) {
-        return ResponseEntity.ok(attendanceService.getStudentAttendance(
-                studentId,
-                LocalDateTime.parse(startDate),
-                LocalDateTime.parse(endDate)));
+        try {
+            LocalDateTime start = parseDateTime(startDate);
+            LocalDateTime end = parseDateTime(endDate);
+            log.info("Getting attendance for student: {} from {} to {}", studentId, start, end);
+            return ResponseEntity.ok(attendanceService.getStudentAttendance(studentId, start, end));
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Use ISO format: yyyy-MM-ddTHH:mm:ss or yyyy-MM-dd");
+        }
     }
 
     @GetMapping("/time-slot/{timeSlotId}")
     public ResponseEntity<List<AttendanceDTO>> getTimeSlotAttendance(
             @PathVariable Integer timeSlotId,
             @RequestParam String date) {
-        return ResponseEntity.ok(attendanceService.getTimeSlotAttendance(
-                timeSlotId,
-                LocalDateTime.parse(date)));
+        try {
+            LocalDateTime dateTime = parseDateTime(date);
+            log.info("Getting attendance for time slot: {} on date: {}", timeSlotId, dateTime);
+            return ResponseEntity.ok(attendanceService.getTimeSlotAttendance(timeSlotId, dateTime));
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Use ISO format: yyyy-MM-ddTHH:mm:ss or yyyy-MM-dd");
+        }
     }
 
     @GetMapping("/report/{studentId}")
@@ -57,16 +73,27 @@ public class AttendanceController {
             @PathVariable UUID studentId,
             @RequestParam String startDate,
             @RequestParam String endDate) {
-        return ResponseEntity.ok(attendanceService.getStudentAttendanceReport(
-                studentId,
-                LocalDateTime.parse(startDate),
-                LocalDateTime.parse(endDate)));
+        try {
+            LocalDateTime start = parseDateTime(startDate);
+            LocalDateTime end = parseDateTime(endDate);
+            log.info("Getting attendance report for student: {} from {} to {}", studentId, start, end);
+            return ResponseEntity.ok(attendanceService.getStudentAttendanceReport(studentId, start, end));
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Use ISO format: yyyy-MM-ddTHH:mm:ss or yyyy-MM-dd");
+        }
     }
 
     @PostMapping("/archive")
     public ResponseEntity<Void> archiveAttendanceRecords(
             @RequestParam int year,
             @RequestParam int month) {
+        if (year < 2000 || year > 2100) {
+            throw new IllegalArgumentException("Year must be between 2000 and 2100");
+        }
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException("Month must be between 1 and 12");
+        }
+        log.info("Archiving attendance records for {}/{}", year, month);
         attendanceService.archiveAttendanceRecords(year, month);
         return ResponseEntity.ok().build();
     }
@@ -76,10 +103,14 @@ public class AttendanceController {
             @PathVariable UUID studentId,
             @RequestParam String startDate,
             @RequestParam String endDate) {
-        return ResponseEntity.ok(attendanceService.getArchivedStudentAttendance(
-                studentId,
-                LocalDateTime.parse(startDate),
-                LocalDateTime.parse(endDate)));
+        try {
+            LocalDateTime start = parseDateTime(startDate);
+            LocalDateTime end = parseDateTime(endDate);
+            log.info("Getting archived attendance for student: {} from {} to {}", studentId, start, end);
+            return ResponseEntity.ok(attendanceService.getArchivedStudentAttendance(studentId, start, end));
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Use ISO format: yyyy-MM-ddTHH:mm:ss or yyyy-MM-dd");
+        }
     }
 
     @GetMapping("/archived/report/{studentId}")
@@ -87,10 +118,14 @@ public class AttendanceController {
             @PathVariable UUID studentId,
             @RequestParam String startDate,
             @RequestParam String endDate) {
-        return ResponseEntity.ok(attendanceService.getArchivedStudentAttendanceReport(
-                studentId,
-                LocalDateTime.parse(startDate),
-                LocalDateTime.parse(endDate)));
+        try {
+            LocalDateTime start = parseDateTime(startDate);
+            LocalDateTime end = parseDateTime(endDate);
+            log.info("Getting archived attendance report for student: {} from {} to {}", studentId, start, end);
+            return ResponseEntity.ok(attendanceService.getArchivedStudentAttendanceReport(studentId, start, end));
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Use ISO format: yyyy-MM-ddTHH:mm:ss or yyyy-MM-dd");
+        }
     }
 
     @GetMapping("/section/{sectionId}")
@@ -98,9 +133,30 @@ public class AttendanceController {
             @PathVariable UUID sectionId,
             @RequestParam String startDate,
             @RequestParam String endDate) {
-        return ResponseEntity.ok(attendanceService.getSectionAttendanceRecords(
-                sectionId,
-                LocalDateTime.parse(startDate),
-                LocalDateTime.parse(endDate)));
+        try {
+            LocalDateTime start = parseDateTime(startDate);
+            LocalDateTime end = parseDateTime(endDate);
+            log.info("Getting section attendance records for section: {} from {} to {}", sectionId, start, end);
+            return ResponseEntity.ok(attendanceService.getSectionAttendanceRecords(sectionId, start, end));
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Use ISO format: yyyy-MM-ddTHH:mm:ss or yyyy-MM-dd");
+        }
+    }
+
+    private LocalDateTime parseDateTime(String dateStr) {
+        try {
+            // Try parsing as full datetime first
+            return LocalDateTime.parse(dateStr);
+        } catch (DateTimeParseException e1) {
+            try {
+                // Try parsing as date only, then convert to datetime
+                LocalDate date = LocalDate.parse(dateStr);
+                return date.atStartOfDay();
+            } catch (DateTimeParseException e2) {
+                // Try with custom formatter
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                return LocalDateTime.parse(dateStr, formatter);
+            }
+        }
     }
 }

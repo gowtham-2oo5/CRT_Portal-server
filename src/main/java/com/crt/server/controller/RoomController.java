@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,7 +27,7 @@ public class RoomController {
 
     @Operation(summary = "Create a new room")
     @PostMapping
-    public ResponseEntity<RoomDTO> createRoom(@RequestBody RoomDTO roomDTO) {
+    public ResponseEntity<RoomDTO> createRoom(@Valid @RequestBody RoomDTO roomDTO) {
         log.info("Creating new room: {}", roomDTO);
         return new ResponseEntity<>(roomService.createRoom(roomDTO), HttpStatus.CREATED);
     }
@@ -47,7 +48,7 @@ public class RoomController {
 
     @Operation(summary = "Update room by ID")
     @PutMapping("/{id}")
-    public ResponseEntity<RoomDTO> updateRoom(@PathVariable UUID id, @RequestBody RoomDTO roomDTO) {
+    public ResponseEntity<RoomDTO> updateRoom(@PathVariable UUID id, @Valid @RequestBody RoomDTO roomDTO) {
         log.info("Updating room with id: {}", id);
         return ResponseEntity.ok(roomService.updateRoom(id, roomDTO));
     }
