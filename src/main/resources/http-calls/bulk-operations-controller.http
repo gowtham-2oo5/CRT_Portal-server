@@ -1,0 +1,116 @@
+### Bulk Operations Controller Tests
+### Base URL
+@baseUrl = http://localhost:8080
+@authToken = Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiQURNSU4iLCJuYW1lIjoiR293dGhhbSBTaXZhIEt1bWFyIiwidXNlcklkIjoiN2JkYTlmOGQtMDdmOC00N2YyLWE3MjMtMTY4MDAzYThiZTM5IiwiZW1haWwiOiJnb3d0aGFtLmFsYS4yb281QGdtYWlsLmNvbSIsInN1YiI6Imdvd3RoYW0tMm9vNSIsImlhdCI6MTc1MjE2MzE5NCwiZXhwIjoxNzUyMjQ5NTk0fQ._zOnaWsKlTrBwQ8TC3LxhMvLezBppWMX1qJ1WryT8YlvYz6h23j9Ol_LEGkCMib7
+
+### 1. Bulk Upload Students (Using correct CSV file name)
+POST {{baseUrl}}/api/bulk/students/upload
+Authorization: {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="bulk-students-upload.csv"
+Content-Type: text/csv
+
+< ./test-data/bulk-students-upload.csv
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 2. Bulk Upload Trainers (Using correct CSV file name)
+POST {{baseUrl}}/api/bulk/trainers/upload
+Authorization: {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="bulk-trainers-upload.csv"
+Content-Type: text/csv
+
+< ./test-data/bulk-trainers-upload.csv
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 3. Bulk Create Simple Rooms (Using correct CSV file name)
+POST {{baseUrl}}/api/bulk/simple-room/upload
+Authorization: {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="bulk-simple-rooms-upload.csv"
+Content-Type: text/csv
+
+< ./test-data/bulk-simple-rooms-upload.csv
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 4. Register Students to Section (Replace sectionId with actual UUID)
+POST {{baseUrl}}/api/bulk/register-students?sectionId=550e8400-e29b-41d4-a716-446655440004
+Authorization: {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="studentsCSV"; filename="section-students.csv"
+Content-Type: text/csv
+
+< ./test-data/section-students.csv
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 5. Upload Bulk Attendance
+POST {{baseUrl}}/api/bulk/attendance/upload?timeSlotId=1&dateTime=2024-01-15T09:00:00
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "file": "attendance.csv"
+}
+
+### 6. Mark Bulk Attendance
+POST {{baseUrl}}/api/bulk/attendance/mark
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "timeSlotId": 2,
+  "dateTime": "2024-01-15T10:15:00",
+  "absentStudentIds": [
+    "550e8400-e29b-41d4-a716-446655440003",
+    "550e8400-e29b-41d4-a716-446655440008"
+  ],
+  "lateStudents": [
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440007",
+      "feedback": "Traffic delay"
+    },
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440009",
+      "feedback": "Medical appointment"
+    }
+  ]
+}
+
+### 7. Another Bulk Attendance Upload
+POST {{baseUrl}}/api/bulk/attendance/upload?timeSlotId=4&dateTime=2024-01-16T14:00:00
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "file": "attendance-afternoon.csv"
+}
+
+### 8. Large Bulk Attendance Mark
+POST {{baseUrl}}/api/bulk/attendance/mark
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "timeSlotId": 5,
+  "dateTime": "2024-01-16T15:15:00",
+  "absentStudentIds": [
+    "550e8400-e29b-41d4-a716-446655440003",
+    "550e8400-e29b-41d4-a716-446655440008",
+    "550e8400-e29b-41d4-a716-446655440010",
+    "550e8400-e29b-41d4-a716-446655440011"
+  ],
+  "lateStudents": [
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440007",
+      "feedback": "Lab work extended"
+    }
+  ]
+}

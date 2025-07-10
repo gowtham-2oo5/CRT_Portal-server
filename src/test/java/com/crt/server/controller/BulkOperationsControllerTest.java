@@ -78,8 +78,8 @@ class BulkOperationsControllerTest {
     @Test
     void bulkCreateRoomsSimple_Success() throws Exception {
         List<RoomDTO> mockRooms = Arrays.asList(
-                RoomDTO.builder().id(UUID.randomUUID().toString()).block("R").floor("5").roomNumber("04").build(),
-                RoomDTO.builder().id(UUID.randomUUID().toString()).block("R").floor("5").roomNumber("05").build());
+                RoomDTO.builder().id(UUID.randomUUID()).block("R").floor("5").roomNumber("04").build(),
+                RoomDTO.builder().id(UUID.randomUUID()).block("R").floor("5").roomNumber("05").build());
         when(roomService.bulkCreateRoomsFromSimpleFormat(any())).thenReturn(mockRooms);
 
         MockMultipartFile file = new MockMultipartFile(
@@ -99,8 +99,8 @@ class BulkOperationsControllerTest {
     @Test
     void bulkUploadTrainers_Success() throws Exception {
         List<TrainerDTO> mockTrainers = Arrays.asList(
-                TrainerDTO.builder().id(UUID.randomUUID().toString()).name("Trainer 1").build(),
-                TrainerDTO.builder().id(UUID.randomUUID().toString()).name("Trainer 2").build());
+                TrainerDTO.builder().id(UUID.randomUUID()).name("Trainer 1").build(),
+                TrainerDTO.builder().id(UUID.randomUUID()).name("Trainer 2").build());
         when(trainerService.bulkCreateTrainers(any())).thenReturn(mockTrainers);
 
         MockMultipartFile file = new MockMultipartFile(

@@ -1,0 +1,13 @@
+regNum,rollNumber,name,status,feedback
+22001,22CS001,John Smith,PRESENT,Good lab work
+22002,22CS002,Jane Doe,PRESENT,Excellent coding skills
+22003,22CS003,Alice Brown,PRESENT,Improved understanding
+22004,22CS004,Sarah Davis,ABSENT,Family emergency
+22005,22CS005,Lisa Martinez,PRESENT,Better attendance
+22006,22CS006,James Lee,PRESENT,Creative solutions
+22007,22CS007,Jennifer Taylor,LATE,Bus delay
+23001,23CS001,Mike Johnson,PRESENT,Good progress
+23002,23CS002,Bob Wilson,ABSENT,Sick
+23003,23CS003,Tom Anderson,PRESENT,On time today
+23004,23CS004,Maria Gonzalez,PRESENT,Helpful to others
+23005,23CS005,Ryan Thomas,PRESENT,Consistent effort

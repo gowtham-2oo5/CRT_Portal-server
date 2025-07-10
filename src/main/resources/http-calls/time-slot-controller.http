@@ -1,0 +1,127 @@
+### Time Slot Controller Tests
+### Base URL
+@baseUrl = http://localhost:8080
+@authToken = Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiQURNSU4iLCJuYW1lIjoiR293dGhhbSBTaXZhIEt1bWFyIiwidXNlcklkIjoiN2JkYTlmOGQtMDdmOC00N2YyLWE3MjMtMTY4MDAzYThiZTM5IiwiZW1haWwiOiJnb3d0aGFtLmFsYS4yb281QGdtYWlsLmNvbSIsInN1YiI6Imdvd3RoYW0tMm9vNSIsImlhdCI6MTc1MjE2MzE5NCwiZXhwIjoxNzUyMjQ5NTk0fQ._zOnaWsKlTrBwQ8TC3LxhMvLezBppWMX1qJ1WryT8YlvYz6h23j9Ol_LEGkCMib7
+
+### 1. Create Time Slot (Using real UUIDs)
+POST {{baseUrl}}/api/time-slots
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "title": 1,
+  "startTime": "09:00:00",
+  "endTime": "10:00:00",
+  "inchargeFacultyId": "e27aa354-81df-4f54-af31-8f7d5113df23",
+  "sectionId": "SECTION_UUID_FROM_RESPONSE",
+  "roomId": "043a2959-b4ad-4de2-ad39-38161c707f3a",
+  "break": false
+}
+
+### 2. Create Another Time Slot
+POST {{baseUrl}}/api/time-slots
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "title": 2,
+  "startTime": "10:15:00",
+  "endTime": "11:15:00",
+  "breakDescription": null,
+  "inchargeFacultyId": "550e8400-e29b-41d4-a716-446655440000",
+  "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+  "roomId": "550e8400-e29b-41d4-a716-446655440001",
+  "break": false
+}
+
+### 3. Create Break Time Slot
+POST {{baseUrl}}/api/time-slots
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "title": 3,
+  "startTime": "11:15:00",
+  "endTime": "11:30:00",
+  "breakDescription": "Tea Break",
+  "inchargeFacultyId": null,
+  "sectionId": null,
+  "roomId": null,
+  "break": true
+}
+
+### 4. Create Afternoon Time Slot
+POST {{baseUrl}}/api/time-slots
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "title": 4,
+  "startTime": "14:00:00",
+  "endTime": "15:00:00",
+  "breakDescription": null,
+  "inchargeFacultyId": "550e8400-e29b-41d4-a716-446655440000",
+  "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+  "roomId": "550e8400-e29b-41d4-a716-446655440001",
+  "break": false
+}
+
+### 5. Get Time Slot by ID (Replace with actual ID)
+GET {{baseUrl}}/api/time-slots/1
+Authorization: {{authToken}}
+
+### 6. Get Time Slots by Section (Replace with actual UUID)
+GET {{baseUrl}}/api/time-slots/section/550e8400-e29b-41d4-a716-446655440004
+Authorization: {{authToken}}
+
+### 7. Get Active Time Slots by Section (Replace with actual UUID)
+GET {{baseUrl}}/api/time-slots/section/550e8400-e29b-41d4-a716-446655440004/active
+Authorization: {{authToken}}
+
+### 8. Get Time Slots by Faculty (Replace with actual UUID)
+GET {{baseUrl}}/api/time-slots/faculty/550e8400-e29b-41d4-a716-446655440000
+Authorization: {{authToken}}
+
+### 9. Get Active Time Slots by Faculty (Replace with actual UUID)
+GET {{baseUrl}}/api/time-slots/faculty/550e8400-e29b-41d4-a716-446655440000/active
+Authorization: {{authToken}}
+
+### 10. Check Time Slot Availability (Replace with actual UUID)
+GET {{baseUrl}}/api/time-slots/check-availability?roomId=550e8400-e29b-41d4-a716-446655440001&startTime=15:00:00&endTime=16:00:00
+Authorization: {{authToken}}
+
+### 11. Update Time Slot (Replace with actual ID)
+PUT {{baseUrl}}/api/time-slots/1
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "title": 1,
+  "startTime": "09:00:00",
+  "endTime": "10:00:00",
+  "breakDescription": null,
+  "inchargeFacultyId": "550e8400-e29b-41d4-a716-446655440000",
+  "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+  "roomId": "550e8400-e29b-41d4-a716-446655440001",
+  "break": false
+}
+
+### 12. Delete Time Slot (Replace with actual ID)
+DELETE {{baseUrl}}/api/time-slots/1
+Authorization: {{authToken}}
+
+### 13. Create More Time Slots for Testing
+POST {{baseUrl}}/api/time-slots
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "title": 5,
+  "startTime": "15:15:00",
+  "endTime": "16:15:00",
+  "breakDescription": null,
+  "inchargeFacultyId": "550e8400-e29b-41d4-a716-446655440000",
+  "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+  "roomId": "550e8400-e29b-41d4-a716-446655440001",
+  "break": false
+}

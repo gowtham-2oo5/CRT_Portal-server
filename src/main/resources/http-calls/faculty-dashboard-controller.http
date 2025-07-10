@@ -1,0 +1,133 @@
+### Faculty Dashboard Controller Tests
+### Base URL
+@baseUrl = http://localhost:8080
+@authToken = Bearer YOUR_JWT_TOKEN_HERE
+
+### 1. Get Faculty Dashboard
+GET {{baseUrl}}/api/faculty/dashboard
+Authorization: {{authToken}}
+
+### 2. Get Faculty Timetable
+GET {{baseUrl}}/api/faculty/timetable
+Authorization: {{authToken}}
+
+### 3. Get Current Active Session
+GET {{baseUrl}}/api/faculty/current-session
+Authorization: {{authToken}}
+
+### 4. Get Assigned Sections
+GET {{baseUrl}}/api/faculty/sections
+Authorization: {{authToken}}
+
+### 5. Get Students for Section (Replace with actual UUID)
+GET {{baseUrl}}/api/faculty/students/550e8400-e29b-41d4-a716-446655440004
+Authorization: {{authToken}}
+
+### 6. Get Students for Time Slot
+GET {{baseUrl}}/api/faculty/session/1/students
+Authorization: {{authToken}}
+
+### 7. Submit Attendance
+POST {{baseUrl}}/api/faculty/attendance
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "timeSlotId": "1",
+  "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+  "topicTaught": "Introduction to Data Structures",
+  "date": "2024-01-15",
+  "attendanceRecords": [
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440003",
+      "rollNumber": "22CS001",
+      "name": "John Smith",
+      "feedback": "Good participation",
+      "present": true
+    },
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440007",
+      "rollNumber": "22CS002",
+      "name": "Jane Doe",
+      "feedback": "Excellent understanding",
+      "present": true
+    },
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440008",
+      "rollNumber": "23CS001",
+      "name": "Mike Johnson",
+      "feedback": "Absent",
+      "present": false
+    }
+  ]
+}
+
+### 8. Submit Another Attendance Session
+POST {{baseUrl}}/api/faculty/attendance
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "timeSlotId": "2",
+  "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+  "topicTaught": "Arrays and Linked Lists",
+  "date": "2024-01-15",
+  "attendanceRecords": [
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440003",
+      "rollNumber": "22CS001",
+      "name": "John Smith",
+      "feedback": "Needs more practice",
+      "present": true
+    },
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440007",
+      "rollNumber": "22CS002",
+      "name": "Jane Doe",
+      "feedback": "Quick learner",
+      "present": true
+    },
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440008",
+      "rollNumber": "23CS001",
+      "name": "Mike Johnson",
+      "feedback": "Present but distracted",
+      "present": true
+    }
+  ]
+}
+
+### 9. Submit Attendance with Mixed Results
+POST {{baseUrl}}/api/faculty/attendance
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "timeSlotId": "4",
+  "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+  "topicTaught": "Stack and Queue Operations",
+  "date": "2024-01-16",
+  "attendanceRecords": [
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440003",
+      "rollNumber": "22CS001",
+      "name": "John Smith",
+      "feedback": "Good problem solving",
+      "present": true
+    },
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440007",
+      "rollNumber": "22CS002",
+      "name": "Jane Doe",
+      "feedback": "Absent due to illness",
+      "present": false
+    },
+    {
+      "studentId": "550e8400-e29b-41d4-a716-446655440008",
+      "rollNumber": "23CS001",
+      "name": "Mike Johnson",
+      "feedback": "Improved focus",
+      "present": true
+    }
+  ]
+}

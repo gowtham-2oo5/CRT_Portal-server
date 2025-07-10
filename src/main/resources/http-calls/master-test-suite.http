@@ -1,0 +1,295 @@
+### CRT Portal Master Test Suite
+### This file contains the essential test flow for the entire system
+### Base URL
+@baseUrl = http://localhost:8080
+@authToken = Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiQURNSU4iLCJuYW1lIjoiR293dGhhbSBTaXZhIEt1bWFyIiwidXNlcklkIjoiN2JkYTlmOGQtMDdmOC00N2YyLWE3MjMtMTY4MDAzYThiZTM5IiwiZW1haWwiOiJnb3d0aGFtLmFsYS4yb281QGdtYWlsLmNvbSIsInN1YiI6Imdvd3RoYW0tMm9vNSIsImlhdCI6MTc1MjE2MzE5NCwiZXhwIjoxNzUyMjQ5NTk0fQ._zOnaWsKlTrBwQ8TC3LxhMvLezBppWMX1qJ1WryT8YlvYz6h23j9Ol_LEGkCMib7
+
+### ========================================
+### PHASE 1: AUTHENTICATION
+### ========================================
+
+### 1.1 Admin Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "admin@crt.com",
+  "password": "admin123"
+}
+
+### 1.2 Verify OTP
+POST {{baseUrl}}/api/auth/verify-otp
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "admin@crt.com",
+  "otp": "123456"
+}
+
+### ========================================
+### PHASE 2: SETUP BASE DATA
+### ========================================
+
+### 2.1 Create Faculty User
+POST {{baseUrl}}/api/users
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Dr. Sarah Wilson",
+  "email": "sarah.wilson@crt.com",
+  "phone": "+1234567890",
+  "username": "sarahwilson",
+  "role": "FACULTY",
+  "isFirstLogin": true,
+  "isActive": true
+}
+
+### 2.2 Create Room
+POST {{baseUrl}}/api/rooms
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "block": "R",
+  "floor": "5",
+  "roomNumber": "04",
+  "subRoom": "A",
+  "roomType": "LAB",
+  "capacity": 60
+}
+
+### 2.3 Create Trainer
+POST {{baseUrl}}/api/trainers
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Dr. Sarah Wilson",
+  "email": "sarah.wilson@crt.com",
+  "sn": "TR001"
+}
+
+### 2.4 Create Students (Bulk Upload)
+POST {{baseUrl}}/api/bulk/students/upload
+Authorization: {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="students.csv"
+Content-Type: text/csv
+
+< ./test-data/students.csv
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ========================================
+### PHASE 3: ACADEMIC STRUCTURE
+### ========================================
+
+### 3.1 Create Section (Using real trainer UUID)
+POST {{baseUrl}}/api/sections
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "trainerId": "282b7486-9517-4c47-a548-6c8e84deeb5f",
+  "sectionName": "CRT-Section-A"
+}
+
+### 3.2 Create Time Slot (Using real UUIDs, fixed schema)
+POST {{baseUrl}}/api/time-slots
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "title": 1,
+  "startTime": "09:00:00",
+  "endTime": "10:00:00",
+  "inchargeFacultyId": "e27aa354-81df-4f54-af31-8f7d5113df23",
+  "sectionId": "SECTION_UUID_FROM_3.1_RESPONSE",
+  "roomId": "043a2959-b4ad-4de2-ad39-38161c707f3a",
+  "break": false
+}
+
+### 3.3 Register Students to Section (Replace sectionId with actual UUID)
+POST {{baseUrl}}/api/bulk/register-students?sectionId=REPLACE_WITH_SECTION_UUID
+Authorization: {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="studentsCSV"; filename="section-students.csv"
+Content-Type: text/csv
+
+< ./test-data/section-students.csv
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ========================================
+### PHASE 4: FACULTY OPERATIONS
+### ========================================
+
+### 4.1 Faculty Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "sarah.wilson@crt.com",
+  "password": "faculty123"
+}
+
+### 4.2 Faculty Dashboard
+GET {{baseUrl}}/api/faculty/dashboard
+Authorization: {{authToken}}
+
+### 4.3 Get Today's Timetable
+GET {{baseUrl}}/api/faculty/timetable
+Authorization: {{authToken}}
+
+### 4.4 Get Students for Section (Replace with actual UUID)
+GET {{baseUrl}}/api/faculty/students/REPLACE_WITH_SECTION_UUID
+Authorization: {{authToken}}
+
+### 4.5 Submit Attendance
+POST {{baseUrl}}/api/faculty/attendance
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "timeSlotId": "1",
+  "sectionId": "REPLACE_WITH_SECTION_UUID",
+  "topicTaught": "Introduction to Data Structures",
+  "date": "2024-01-15",
+  "attendanceRecords": [
+    {
+      "studentId": "REPLACE_WITH_STUDENT_UUID_1",
+      "rollNumber": "22CS001",
+      "name": "John Smith",
+      "feedback": "Good participation",
+      "present": true
+    },
+    {
+      "studentId": "REPLACE_WITH_STUDENT_UUID_2",
+      "rollNumber": "22CS002",
+      "name": "Jane Doe",
+      "feedback": "Excellent understanding",
+      "present": true
+    }
+  ]
+}
+
+### ========================================
+### PHASE 5: REPORTS & ANALYTICS
+### ========================================
+
+### 5.1 Get Attendance Reports
+GET {{baseUrl}}/api/faculty/reports
+Authorization: {{authToken}}
+
+### 5.2 Get Attendance Analytics
+GET {{baseUrl}}/api/faculty/analytics/attendance
+Authorization: {{authToken}}
+
+### 5.3 Export CSV Report
+GET {{baseUrl}}/api/faculty/analytics/export/csv
+Authorization: {{authToken}}
+
+### ========================================
+### PHASE 6: ADMIN DASHBOARD
+### ========================================
+
+### 6.1 Admin Login (Switch back to admin)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "admin@crt.com",
+  "password": "admin123"
+}
+
+### 6.2 Get Dashboard Metrics
+GET {{baseUrl}}/api/admin/dashboard/metrics
+Authorization: {{authToken}}
+
+### 6.3 Get Recent Activities
+GET {{baseUrl}}/api/admin/dashboard/recent-actions
+Authorization: {{authToken}}
+
+### ========================================
+### PHASE 7: BULK OPERATIONS TEST
+### ========================================
+
+### 7.1 Mark Bulk Attendance
+POST {{baseUrl}}/api/bulk/attendance/mark
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "timeSlotId": 1,
+  "dateTime": "2024-01-15T10:15:00",
+  "absentStudentIds": [
+    "REPLACE_WITH_STUDENT_UUID_3"
+  ],
+  "lateStudents": [
+    {
+      "studentId": "REPLACE_WITH_STUDENT_UUID_4",
+      "feedback": "Traffic delay"
+    }
+  ]
+}
+
+### ========================================
+### PHASE 8: DATA RETRIEVAL TESTS
+### ========================================
+
+### 8.1 Get All Users
+GET {{baseUrl}}/api/users
+Authorization: {{authToken}}
+
+### 8.2 Get All Students
+GET {{baseUrl}}/api/students
+Authorization: {{authToken}}
+
+### 8.3 Get All Trainers
+GET {{baseUrl}}/api/trainers
+Authorization: {{authToken}}
+
+### 8.4 Get All Rooms
+GET {{baseUrl}}/api/rooms
+Authorization: {{authToken}}
+
+### 8.5 Get All Sections
+GET {{baseUrl}}/api/sections
+Authorization: {{authToken}}
+
+### ========================================
+### PHASE 9: SEARCH OPERATIONS
+### ========================================
+
+### 9.1 Get Student by Registration Number
+GET {{baseUrl}}/api/students/regnum/22001
+Authorization: {{authToken}}
+
+### 9.2 Get Trainer by Serial Number
+GET {{baseUrl}}/api/trainers/sn/TR001
+Authorization: {{authToken}}
+
+### 9.3 Get User by Email
+GET {{baseUrl}}/api/users/email/sarah.wilson@crt.com
+Authorization: {{authToken}}
+
+### ========================================
+### PHASE 10: CLEANUP (Optional)
+### ========================================
+
+### 10.1 Delete Test Data (Replace UUIDs with actual values)
+# DELETE {{baseUrl}}/api/students/REPLACE_WITH_STUDENT_UUID
+# Authorization: {{authToken}}
+
+# DELETE {{baseUrl}}/api/sections/REPLACE_WITH_SECTION_UUID
+# Authorization: {{authToken}}
+
+# DELETE {{baseUrl}}/api/trainers/REPLACE_WITH_TRAINER_UUID
+# Authorization: {{authToken}}
+
+### ========================================
+### END OF MASTER TEST SUITE
+### ========================================

@@ -3,17 +3,16 @@ package com.crt.server.controller;
 import com.crt.server.dto.CreateSectionDTO;
 import com.crt.server.dto.SectionDTO;
 import com.crt.server.exception.ErrorResponse;
+import com.crt.server.service.CsvService;
 import com.crt.server.service.SectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +22,9 @@ public class SectionController {
 
     @Autowired
     private SectionService sectionService;
+
+    @Autowired
+    private CsvService csvService;
 
     @PostMapping
     public ResponseEntity<SectionDTO> createSection(@RequestBody CreateSectionDTO createSectionDTO) {
@@ -52,17 +54,17 @@ public class SectionController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{sectionId}/students")
+    @PostMapping(value = "/{sectionId}/students", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> registerStudents(
             @PathVariable UUID sectionId,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("studentsCSV") MultipartFile studentsCSV) {
         try {
-            if (file.isEmpty()) {
+            if (studentsCSV.isEmpty()) {
                 ErrorResponse error = ErrorResponse.builder()
                         .timestamp(LocalDateTime.now())
                         .status(HttpStatus.BAD_REQUEST.value())
                         .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                        .message("File is empty")
+                        .message("CSV file is empty")
                         .path("/api/sections/" + sectionId + "/students")
                         .build();
                 return ResponseEntity
@@ -70,13 +72,26 @@ public class SectionController {
                         .body(error);
             }
 
-            List<String> regNums = new ArrayList<>();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                regNums.add(line.trim());
+            // Use CsvService to parse CSV and extract regNum field
+            String[] headers = {"regNum"};
+            List<String> regNums = csvService.parseCsv(studentsCSV, headers, record -> record.get("regNum"));
+            
+            if (regNums.isEmpty()) {
+                ErrorResponse error = ErrorResponse.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(HttpStatus.BAD_REQUEST.value())
+                        .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                        .message("No valid registration numbers found in the CSV file")
+                        .path("/api/sections/" + sectionId + "/students")
+                        .build();
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(error);
             }
+            
+            System.out.println("regNums: " + regNums);
             return ResponseEntity.ok(sectionService.registerStudents(sectionId, regNums));
+            
         } catch (Exception e) {
             ErrorResponse error = ErrorResponse.builder()
                     .timestamp(LocalDateTime.now())

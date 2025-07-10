@@ -1,0 +1,55 @@
+### Authentication Controller Tests
+### Base URL
+@baseUrl = http://localhost:8080
+
+### 1. Login Request
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "gowtham.ala.2oo5@gmail.com",
+  "password": "YnPIoGb1P2HwAbR8"
+}
+
+### 2. Login with Username
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "admin",
+  "password": "admin123"
+}
+
+### 3. Verify OTP
+POST {{baseUrl}}/api/auth/verify-otp
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "gowtham.ala.2oo5@gmail.com",
+  "otp": "651677"
+}
+
+### 4. Refresh Token
+POST {{baseUrl}}/api/auth/refresh-token
+Authorization: Bearer YOUR_REFRESH_TOKEN_HERE
+
+### 5. Forgot Password
+POST {{baseUrl}}/api/auth/forgot-password?email=admin@crt.com
+
+### 6. Faculty Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "faculty@crt.com",
+  "password": "faculty123"
+}
+
+### 7. Faculty OTP Verification
+POST {{baseUrl}}/api/auth/verify-otp
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "faculty@crt.com",
+  "otp": "654321"
+}

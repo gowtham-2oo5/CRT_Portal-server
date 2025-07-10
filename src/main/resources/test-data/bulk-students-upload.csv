@@ -1,0 +1,26 @@
+name,email,phone,regNum,department,batch
+John Smith,john.smith@student.crt.com,+1234567801,22001,Computer Science,Y22
+Jane Doe,jane.doe@student.crt.com,+1234567802,22002,Computer Science,Y22
+Mike Johnson,mike.johnson@student.crt.com,+1234567803,23001,Computer Science,Y23
+Alice Brown,alice.brown@student.crt.com,+1234567804,22003,Computer Science,Y22
+Bob Wilson,bob.wilson@student.crt.com,+1234567805,23002,Computer Science,Y23
+Sarah Davis,sarah.davis@student.crt.com,+1234567806,22004,Computer Science,Y22
+Tom Anderson,tom.anderson@student.crt.com,+1234567807,23003,Computer Science,Y23
+Lisa Martinez,lisa.martinez@student.crt.com,+1234567808,22005,Computer Science,Y22
+David Garcia,david.garcia@student.crt.com,+1234567809,24001,Computer Science,Y24
+Emma Rodriguez,emma.rodriguez@student.crt.com,+1234567810,24002,Computer Science,Y24
+James Lee,james.lee@student.crt.com,+1234567811,22006,Computer Science,Y22
+Maria Gonzalez,maria.gonzalez@student.crt.com,+1234567812,23004,Computer Science,Y23
+Kevin White,kevin.white@student.crt.com,+1234567813,24003,Computer Science,Y24
+Jennifer Taylor,jennifer.taylor@student.crt.com,+1234567814,22007,Computer Science,Y22
+Ryan Thomas,ryan.thomas@student.crt.com,+1234567815,23005,Computer Science,Y23
+Ashley Johnson,ashley.johnson@student.crt.com,+1234567816,24004,Computer Science,Y24
+Christopher Lee,christopher.lee@student.crt.com,+1234567817,22008,Computer Science,Y22
+Amanda Wilson,amanda.wilson@student.crt.com,+1234567818,23006,Computer Science,Y23
+Matthew Brown,matthew.brown@student.crt.com,+1234567819,24005,Computer Science,Y24
+Jessica Davis,jessica.davis@student.crt.com,+1234567820,25001,Computer Science,Y25
+Daniel Rodriguez,daniel.rodriguez@student.crt.com,+1234567821,22009,Computer Science,Y22
+Nicole Garcia,nicole.garcia@student.crt.com,+1234567822,23007,Computer Science,Y23
+Brandon Martinez,brandon.martinez@student.crt.com,+1234567823,24006,Computer Science,Y24
+Rachel Thompson,rachel.thompson@student.crt.com,+1234567824,25002,Computer Science,Y25
+Tyler Anderson,tyler.anderson@student.crt.com,+1234567825,22010,Computer Science,Y22

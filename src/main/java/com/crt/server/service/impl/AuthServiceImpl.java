@@ -74,18 +74,21 @@ public class AuthServiceImpl implements AuthService {
             throw new AuthenticationException("Invalid OTP");
         }
 
+        boolean wasFirst = user.isFirstLogin();
         UserDTO userDTO = userService.getUserByEmail(user.getEmail());
 
         String token = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-        System.out.println(user.isFirstLogin());
-        System.out.println("HEREES THE TOKEN RA: " + token);
+        if(wasFirst) userService.updateFirstLoginStatus(user.getEmail(), false);
+//        System.out.println(user.isFirstLogin());
+//        System.out.println("HEREES THE TOKEN RA: " + token);
 
         return AuthResponseDTO.builder()
                 .message("OTP verified successfully")
                 .token(token)
                 .refreshToken(refreshToken)
                 .user(userDTO)
+                .isFirstLogin(wasFirst)
                 .build();
     }
 

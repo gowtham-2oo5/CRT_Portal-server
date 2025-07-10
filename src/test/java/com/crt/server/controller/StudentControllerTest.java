@@ -40,7 +40,7 @@ class StudentControllerTest {
         studentId = UUID.randomUUID();
 
         mockStudentDTO = StudentDTO.builder()
-                .id(studentId)
+                .id(studentId.toString())
                 .name("John Doe")
                 .email("john@example.com")
                 .phone("1234567890")

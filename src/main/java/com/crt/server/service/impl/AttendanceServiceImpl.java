@@ -452,7 +452,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 Student student = studentRepository.findById(studentId)
                                 .orElseThrow(() -> new EntityNotFoundException("Student not found"));
 
-                return attendanceRepository.findByStudentAndDateBetween(student, startDate, endDate).stream()
+                return attendanceRepository.findByStudentIdAndDateBetween(studentId, startDate, endDate).stream()
                                 .map(this::convertToDTO).collect(Collectors.toList());
         }
 
@@ -462,7 +462,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 TimeSlot timeSlot = timeSlotRepository.findById(timeSlotId)
                                 .orElseThrow(() -> new EntityNotFoundException("Time slot not found"));
 
-                return attendanceRepository.findByTimeSlotAndDate(timeSlot, date).stream().map(this::convertToDTO)
+                return attendanceRepository.findByTimeSlotIdAndDate(timeSlotId, date).stream().map(this::convertToDTO)
                                 .collect(Collectors.toList());
         }
 
@@ -511,7 +511,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 Student student = studentRepository.findById(studentId)
                                 .orElseThrow(() -> new EntityNotFoundException("Student not found"));
 
-                return attendanceArchiveRepository.findByStudentAndDateBetween(student, startDate, endDate).stream()
+                return attendanceArchiveRepository.findByStudentIdAndDateBetween(studentId, startDate, endDate).stream()
                                 .map(this::convertArchiveToDTO).collect(Collectors.toList());
         }
 

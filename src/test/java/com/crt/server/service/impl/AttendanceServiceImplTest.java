@@ -237,7 +237,7 @@ class AttendanceServiceImplTest {
 
                 // 2. Get attendance for the student
                 List<AttendanceDTO> studentAttendance = attendanceService.getStudentAttendance(
-                                realStudent.getId(),
+                        UUID.fromString(realStudent.getId()),
                                 testDateTime.minusDays(1),
                                 testDateTime.plusDays(1));
                 assertNotNull(studentAttendance);

@@ -48,6 +48,10 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private boolean isFirstLogin;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean isActive = true;
+
     // Faculty-specific fields
     @Enumerated(EnumType.STRING)
     @Column
@@ -86,6 +90,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return isActive;
     }
 }

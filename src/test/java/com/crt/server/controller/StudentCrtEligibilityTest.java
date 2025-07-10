@@ -39,7 +39,7 @@ public class StudentCrtEligibilityTest {
         String reason = "Academic performance below threshold";
         
         StudentDTO mockResponse = StudentDTO.builder()
-                .id(studentId)
+                .id(studentId.toString())
                 .name("Test Student")
                 .email("test@example.com")
                 .phone("1234567890")
@@ -70,7 +70,7 @@ public class StudentCrtEligibilityTest {
         String reason = "Improved performance, eligible for CRT again";
         
         StudentDTO mockResponse = StudentDTO.builder()
-                .id(studentId)
+                .id(studentId.toString())
                 .name("Test Student")
                 .email("test@example.com")
                 .phone("1234567890")

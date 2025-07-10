@@ -1,13 +1,5 @@
 package com.crt.server.service.impl;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.crt.server.dto.AuthResponseDTO;
 import com.crt.server.dto.UserDTO;
 import com.crt.server.exception.ResourceNotFoundException;
@@ -16,8 +8,14 @@ import com.crt.server.repository.UserRepository;
 import com.crt.server.service.EmailService;
 import com.crt.server.service.UserService;
 import com.crt.server.util.PasswordGenerator;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +46,7 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(generatedPassword))
                 .role(createUserDTO.getRole())
                 .isFirstLogin(true)
+                .isActive(createUserDTO.getIsActive() != null ? createUserDTO.getIsActive() : true)
                 .build();
 
         // Save user
@@ -97,6 +96,9 @@ public class UserServiceImpl implements UserService {
         user.setEmail(updateUserDTO.getEmail());
         user.setPhone(updateUserDTO.getPhone());
         user.setRole(updateUserDTO.getRole());
+        if (updateUserDTO.getIsActive() != null) {
+            user.setActive(updateUserDTO.getIsActive());
+        }
 
         User updatedUser = userRepository.save(user);
         return convertToDTO(updatedUser);
@@ -167,6 +169,16 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    @Override
+    public void updateFirstLoginStatus(String email, boolean isFirstLogin) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        user.setFirstLogin(isFirstLogin);
+        userRepository.save(user);
+
+    }
+
     private UserDTO convertToDTO(User user) {
         return UserDTO.builder()
                 .id(user.getId())
@@ -176,6 +188,7 @@ public class UserServiceImpl implements UserService {
                 .username(user.getUsername())
                 .role(user.getRole())
                 .isFirstLogin(user.isFirstLogin())
+                .isActive(user.isActive())
                 .build();
     }
 }

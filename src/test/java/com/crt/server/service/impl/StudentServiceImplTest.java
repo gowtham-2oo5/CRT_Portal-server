@@ -54,7 +54,7 @@ class StudentServiceImplTest {
                 .build();
 
         testStudentDTO = StudentDTO.builder()
-                .id(testStudentId)
+                .id(testStudentId.toString())
                 .name("Test Student")
                 .email("test@example.com")
                 .phone("1234567890")

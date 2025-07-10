@@ -20,4 +20,4 @@ public class UserDTO {
     private String username;
     private Role role;
     private Boolean isFirstLogin;
-}
+    private Boolean isActive;}

@@ -1,0 +1,13 @@
+regNum,rollNumber,name,status,feedback
+22001,22CS001,John Smith,PRESENT,Good participation
+22002,22CS002,Jane Doe,PRESENT,Excellent understanding
+22003,22CS003,Alice Brown,LATE,Arrived 10 minutes late
+22004,22CS004,Sarah Davis,PRESENT,Active in discussions
+22005,22CS005,Lisa Martinez,ABSENT,Sick leave
+22006,22CS006,James Lee,PRESENT,Good problem solving
+22007,22CS007,Jennifer Taylor,ABSENT,Medical appointment
+23001,23CS001,Mike Johnson,PRESENT,Improved focus
+23002,23CS002,Bob Wilson,PRESENT,Good questions
+23003,23CS003,Tom Anderson,LATE,Traffic delay
+23004,23CS004,Maria Gonzalez,PRESENT,Team collaboration
+23005,23CS005,Ryan Thomas,PRESENT,Consistent performance

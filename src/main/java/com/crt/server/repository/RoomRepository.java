@@ -22,4 +22,7 @@ public interface RoomRepository extends JpaRepository<Room, UUID> {
                         @Param("block") String block,
                         @Param("floor") String floor,
                         @Param("roomNumber") String roomNumber);
+
+        @Query("SELECT CASE WHEN COUNT(r) > 0 then TRUE ELSE false END FROM Room r WHERE r.roomNumber = :s")
+        Boolean existsByRoomNumber(String s);
 }

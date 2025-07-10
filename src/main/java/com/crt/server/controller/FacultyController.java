@@ -24,6 +24,7 @@ import java.util.UUID;
 @Tag(name = "Faculty Dashboard", description = "Faculty dashboard and attendance management APIs")
 public class FacultyController {
 
+
     private final FacultyDashboardService facultyDashboardService;
     private final FacultyTimetableService facultyTimetableService;
     private final FacultyAttendanceService facultyAttendanceService;

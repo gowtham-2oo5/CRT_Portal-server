@@ -9,6 +9,10 @@ src/main/resources/application.yml
 src/main/resources/application-*.yml
 !src/main/resources/application-dev.yml
 
+# Documentation files (except README)
+*.md
+!README.md
+
 # Compiled files
 *.class
 *.jar

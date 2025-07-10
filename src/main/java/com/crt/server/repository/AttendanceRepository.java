@@ -59,4 +59,24 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
     Optional<Attendance> findTopByStudentAndStatusOrderByDateDesc(Student student, AttendanceStatus status);
 
     List<Attendance> findByStudentAndTimeSlotInOrderByDateDesc(Student student, List<TimeSlot> timeSlots);
+
+    // Methods required by AttendanceControllerIntegrationTest
+    List<Attendance> findByStudentIdAndDateBetween(UUID studentId, LocalDateTime startDate, LocalDateTime endDate);
+
+    List<Attendance> findByTimeSlotIdAndDate(Integer timeSlotId, LocalDateTime date);
+
+    Long countByStudentIdAndStatusAndDateBetween(UUID studentId, AttendanceStatus status, LocalDateTime startDate, LocalDateTime endDate);
+
+    @Query("SELECT a FROM Attendance a WHERE YEAR(a.date) = :year AND MONTH(a.date) = :month")
+    List<Attendance> findByYearAndMonth(@Param("year") int year, @Param("month") int month);
+
+    @Query("SELECT s.id, s.name, s.regNum, a.status, ts.startTime, a.date " +
+           "FROM Attendance a " +
+           "JOIN a.student s " +
+           "JOIN a.timeSlot ts " +
+           "WHERE ts.section.id = :sectionId AND a.date BETWEEN :startDate AND :endDate " +
+           "ORDER BY a.date DESC")
+    List<Object[]> findSectionAttendanceRecords(@Param("sectionId") UUID sectionId, 
+                                               @Param("startDate") LocalDateTime startDate, 
+                                               @Param("endDate") LocalDateTime endDate);
 }

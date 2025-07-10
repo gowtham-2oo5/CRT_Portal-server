@@ -1,0 +1,132 @@
+### Section Schedule Controller Tests
+### Base URL
+@baseUrl = http://localhost:8080
+@authToken = Bearer YOUR_JWT_TOKEN_HERE
+
+### 1. Create Section Schedule (Replace UUIDs with actual values)
+POST {{baseUrl}}/api/section-schedules
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+  "roomId": "550e8400-e29b-41d4-a716-446655440001",
+  "timeSlots": [
+    {
+      "title": 1,
+      "startTime": "09:00:00",
+      "endTime": "10:00:00",
+      "breakDescription": null,
+      "inchargeFacultyId": "550e8400-e29b-41d4-a716-446655440000",
+      "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+      "roomId": "550e8400-e29b-41d4-a716-446655440001",
+      "break": false
+    }
+  ]
+}
+
+### 2. Create Another Section Schedule
+POST {{baseUrl}}/api/section-schedules
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "sectionId": "550e8400-e29b-41d4-a716-446655440005",
+  "roomId": "550e8400-e29b-41d4-a716-446655440002",
+  "timeSlots": [
+    {
+      "title": 2,
+      "startTime": "10:15:00",
+      "endTime": "11:15:00",
+      "breakDescription": null,
+      "inchargeFacultyId": "550e8400-e29b-41d4-a716-446655440000",
+      "sectionId": "550e8400-e29b-41d4-a716-446655440005",
+      "roomId": "550e8400-e29b-41d4-a716-446655440002",
+      "break": false
+    }
+  ]
+}
+
+### 3. Get All Schedules
+GET {{baseUrl}}/api/section-schedules
+Authorization: {{authToken}}
+
+### 4. Get Schedule by ID (Replace with actual UUID)
+GET {{baseUrl}}/api/section-schedules/550e8400-e29b-41d4-a716-446655440006
+Authorization: {{authToken}}
+
+### 5. Get Schedule by Section (Replace with actual UUID)
+GET {{baseUrl}}/api/section-schedules/section/550e8400-e29b-41d4-a716-446655440004
+Authorization: {{authToken}}
+
+### 6. Update Schedule (Replace with actual UUID)
+PUT {{baseUrl}}/api/section-schedules/550e8400-e29b-41d4-a716-446655440006
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+  "roomId": "550e8400-e29b-41d4-a716-446655440001",
+  "timeSlots": [
+    {
+      "title": 1,
+      "startTime": "09:00:00",
+      "endTime": "10:00:00",
+      "breakDescription": null,
+      "inchargeFacultyId": "550e8400-e29b-41d4-a716-446655440000",
+      "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+      "roomId": "550e8400-e29b-41d4-a716-446655440001",
+      "break": false
+    },
+    {
+      "title": 2,
+      "startTime": "10:15:00",
+      "endTime": "11:15:00",
+      "breakDescription": null,
+      "inchargeFacultyId": "550e8400-e29b-41d4-a716-446655440000",
+      "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+      "roomId": "550e8400-e29b-41d4-a716-446655440001",
+      "break": false
+    }
+  ]
+}
+
+### 7. Add Time Slot to Schedule (Replace scheduleId with actual UUID)
+POST {{baseUrl}}/api/section-schedules/550e8400-e29b-41d4-a716-446655440006/time-slots
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "title": 3,
+  "startTime": "14:00:00",
+  "endTime": "15:00:00",
+  "breakDescription": null,
+  "inchargeFacultyId": "550e8400-e29b-41d4-a716-446655440000",
+  "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+  "roomId": "550e8400-e29b-41d4-a716-446655440001",
+  "break": false
+}
+
+### 8. Update Time Slot in Schedule (Replace scheduleId and timeSlotId with actual values)
+PUT {{baseUrl}}/api/section-schedules/550e8400-e29b-41d4-a716-446655440006/time-slots/1
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "title": 1,
+  "startTime": "09:15:00",
+  "endTime": "10:15:00",
+  "breakDescription": null,
+  "inchargeFacultyId": "550e8400-e29b-41d4-a716-446655440000",
+  "sectionId": "550e8400-e29b-41d4-a716-446655440004",
+  "roomId": "550e8400-e29b-41d4-a716-446655440001",
+  "break": false
+}
+
+### 9. Remove Time Slot from Schedule (Replace scheduleId and timeSlotId with actual values)
+DELETE {{baseUrl}}/api/section-schedules/550e8400-e29b-41d4-a716-446655440006/time-slots/1
+Authorization: {{authToken}}
+
+### 10. Delete Schedule (Replace with actual UUID)
+DELETE {{baseUrl}}/api/section-schedules/550e8400-e29b-41d4-a716-446655440006
+Authorization: {{authToken}}

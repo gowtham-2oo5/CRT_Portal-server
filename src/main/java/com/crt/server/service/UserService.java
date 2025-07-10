@@ -22,7 +22,6 @@ public interface UserService {
     void deleteUser(UUID id);
 
     // Password management
-
     void resetPassword(String email);
 
     // Additional utility methods
@@ -33,4 +32,7 @@ public interface UserService {
     AuthResponseDTO updatePassword(UUID id, String currentPassword, String newPassword);
 
     AuthResponseDTO updatePasswordByEmail(String email, String newPassword);
+
+    // Update first login status
+    void updateFirstLoginStatus(String email, boolean isFirstLogin);
 }

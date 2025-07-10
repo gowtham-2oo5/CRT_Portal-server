@@ -1,0 +1,101 @@
+### Trainer Controller Tests
+### Base URL
+@baseUrl = http://localhost:8080
+@authToken = Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiQURNSU4iLCJuYW1lIjoiR293dGhhbSBTaXZhIEt1bWFyIiwidXNlcklkIjoiN2JkYTlmOGQtMDdmOC00N2YyLWE3MjMtMTY4MDAzYThiZTM5IiwiZW1haWwiOiJnb3d0aGFtLmFsYS4yb281QGdtYWlsLmNvbSIsInN1YiI6Imdvd3RoYW0tMm9vNSIsImlhdCI6MTc1MjE2MzE5NCwiZXhwIjoxNzUyMjQ5NTk0fQ._zOnaWsKlTrBwQ8TC3LxhMvLezBppWMX1qJ1WryT8YlvYz6h23j9Ol_LEGkCMib7
+
+### 1. Create Trainer
+POST {{baseUrl}}/api/trainers
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Dr. Sarah Wilson",
+  "email": "sarah.wilson@crt.com",
+  "sn": "TR001"
+}
+
+### 2. Create Another Trainer
+POST {{baseUrl}}/api/trainers
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Prof. Michael Brown",
+  "email": "michael.brown@crt.com",
+  "sn": "TR002"
+}
+
+### 3. Create Third Trainer
+POST {{baseUrl}}/api/trainers
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Dr. Emily Davis",
+  "email": "emily.davis@crt.com",
+  "sn": "TR003"
+}
+
+### 4. Get All Trainers
+GET {{baseUrl}}/api/trainers
+Authorization: {{authToken}}
+
+### 5. Get Trainer by ID (Using real trainer UUID - Dr. Sarah Wilson)
+GET {{baseUrl}}/api/trainers/282b7486-9517-4c47-a548-6c8e84deeb5f
+Authorization: {{authToken}}
+
+### 6. Get Trainer by Serial Number
+GET {{baseUrl}}/api/trainers/sn/TR001
+Authorization: {{authToken}}
+
+### 7. Get Trainer by Email
+GET {{baseUrl}}/api/trainers/email/sarah.wilson@crt.com
+Authorization: {{authToken}}
+
+### 8. Update Trainer (Using real trainer UUID - Dr. Sarah Wilson)
+PUT {{baseUrl}}/api/trainers/282b7486-9517-4c47-a548-6c8e84deeb5f
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Dr. Sarah Wilson Updated",
+  "email": "sarah.wilson.updated@crt.com",
+  "sn": "TR001"
+}
+
+### 9. Delete Trainer (Using real trainer UUID - Prof. Michael Brown)
+DELETE {{baseUrl}}/api/trainers/e0e46e50-5931-428d-80cf-e982fbe2eef4
+Authorization: {{authToken}}
+
+### 10. Create More Trainers for Testing
+POST {{baseUrl}}/api/trainers
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Dr. Robert Johnson",
+  "email": "robert.johnson@crt.com",
+  "sn": "TR004"
+}
+
+###
+POST {{baseUrl}}/api/trainers
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Prof. Lisa Anderson",
+  "email": "lisa.anderson@crt.com",
+  "sn": "TR005"
+}
+
+###
+POST {{baseUrl}}/api/trainers
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Dr. David Martinez",
+  "email": "david.martinez@crt.com",
+  "sn": "TR006"
+}

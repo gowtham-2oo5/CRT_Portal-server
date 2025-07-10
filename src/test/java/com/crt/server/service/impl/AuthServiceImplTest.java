@@ -57,14 +57,14 @@ class AuthServiceImplTest {
     @BeforeEach
     void setUp() {
         testUser = User.builder()
-                .id(UUID.randomUUID().toString())
+                .id(UUID.randomUUID())
                 .username("testuser")
                 .email("test@example.com")
                 .password("encodedPassword")
                 .build();
 
         testUserDTO = UserDTO.builder()
-                .id(UUID.randomUUID().toString())
+                .id(UUID.randomUUID())
                 .username("testuser")
                 .email("test@example.com")
                 .build();

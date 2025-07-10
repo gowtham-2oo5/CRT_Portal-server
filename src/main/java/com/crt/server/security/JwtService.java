@@ -58,6 +58,7 @@ public class JwtService {
             extraClaims.put("name", user.getName());
             extraClaims.put("email", user.getEmail());
             extraClaims.put("role", user.getRole().name());
+            extraClaims.put("isFirstLogin", user.isFirstLogin());
         }
 
         return Jwts

@@ -17,7 +17,9 @@ public class AttendanceReportDTO {
     private String studentName;
     private String regNum;
     private long totalClasses;
-    private long absences;
+    private long presentCount;
+    private long absentCount;
+    private long absences; // Keep for backward compatibility
     private double attendancePercentage;
     private List<AttendanceDTO> attendanceRecords;
 }

@@ -28,4 +28,7 @@ public interface AttendanceArchiveRepository extends JpaRepository<AttendanceArc
             @Param("student") Student student,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
+
+    // Method required by AttendanceControllerIntegrationTest
+    List<AttendanceArchive> findByStudentIdAndDateBetween(UUID studentId, LocalDateTime startDate, LocalDateTime endDate);
 }

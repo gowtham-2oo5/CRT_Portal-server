@@ -1,0 +1,118 @@
+### Room Controller Tests
+### Base URL
+@baseUrl = http://localhost:8080
+@authToken = Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiQURNSU4iLCJuYW1lIjoiR293dGhhbSBTaXZhIEt1bWFyIiwidXNlcklkIjoiN2JkYTlmOGQtMDdmOC00N2YyLWE3MjMtMTY4MDAzYThiZTM5IiwiZW1haWwiOiJnb3d0aGFtLmFsYS4yb281QGdtYWlsLmNvbSIsInN1YiI6Imdvd3RoYW0tMm9vNSIsImlhdCI6MTc1MjE2MzE5NCwiZXhwIjoxNzUyMjQ5NTk0fQ._zOnaWsKlTrBwQ8TC3LxhMvLezBppWMX1qJ1WryT8YlvYz6h23j9Ol_LEGkCMib7
+
+### 1. Create Lab Room
+POST {{baseUrl}}/api/rooms
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "block": "R",
+  "floor": "5",
+  "roomNumber": "04",
+  "subRoom": "A",
+  "roomType": "LAB",
+  "capacity": 60
+}
+
+### 2. Create Lecture Room
+POST {{baseUrl}}/api/rooms
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "block": "R",
+  "floor": "3",
+  "roomNumber": "15",
+  "roomType": "LECTURE_ROOM",
+  "capacity": 80
+}
+
+### 3. Create Seminar Hall
+POST {{baseUrl}}/api/rooms
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "block": "A",
+  "floor": "2",
+  "roomNumber": "01",
+  "roomType": "SEMINAR_HALL",
+  "capacity": 150
+}
+
+### 4. Get All Rooms
+GET {{baseUrl}}/api/rooms
+Authorization: {{authToken}}
+
+### 5. Get Room by ID (Using real room UUID - R405A)
+GET {{baseUrl}}/api/rooms/043a2959-b4ad-4de2-ad39-38161c707f3a
+Authorization: {{authToken}}
+
+### 6. Update Room (Using real room UUID - R405A)
+PUT {{baseUrl}}/api/rooms/043a2959-b4ad-4de2-ad39-38161c707f3a
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "block": "R",
+  "floor": "5",
+  "roomNumber": "04",
+  "subRoom": "B",
+  "roomType": "LAB",
+  "capacity": 65
+}
+
+### 7. Delete Room (Using real room UUID - R101)
+DELETE {{baseUrl}}/api/rooms/16b61a11-9169-4ac5-84c3-9f222d4f16d7
+Authorization: {{authToken}}
+
+### 8. Parse Room String
+POST {{baseUrl}}/api/rooms/parse?roomString=R504A
+Authorization: {{authToken}}
+
+### 9. Parse Another Room String
+POST {{baseUrl}}/api/rooms/parse?roomString=A201
+Authorization: {{authToken}}
+
+### 10. Create Multiple Rooms for Testing
+POST {{baseUrl}}/api/rooms
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "block": "R",
+  "floor": "4",
+  "roomNumber": "12",
+  "roomType": "LAB",
+  "capacity": 50
+}
+
+###
+POST {{baseUrl}}/api/rooms
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "block": "B",
+  "floor": "1",
+  "roomNumber": "05",
+  "roomType": "LECTURE_ROOM",
+  "capacity": 70
+}
+
+###
+POST {{baseUrl}}/api/rooms
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "block": "C",
+  "floor": "3",
+  "roomNumber": "08",
+  "subRoom": "A",
+  "roomType": "LAB",
+  "capacity": 45
+}
