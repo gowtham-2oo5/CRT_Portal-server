@@ -106,9 +106,9 @@ public class SectionController {
         }
     }
 
-    @GetMapping("/trainer/{trainerId}")
-    public ResponseEntity<List<SectionDTO>> getSectionsByTrainer(@PathVariable UUID trainerId) {
-        return ResponseEntity.ok(sectionService.getSectionsByTrainer(trainerId));
+    @GetMapping("/Training/{trainingId}")
+    public ResponseEntity<List<SectionDTO>> getSectionsByTraining(@PathVariable UUID trainingId) {
+        return ResponseEntity.ok(sectionService.getSectionsByTraining(trainingId));
     }
 
     @PutMapping("/student/{studentId}/section/{sectionId}")

@@ -23,12 +23,12 @@ public class Section {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @ManyToOne
-    @JoinColumn(name = "trainer_id", nullable = false)
-    private CRT_Trainer trainer;
+    @JoinColumn(name = "training_id", nullable = false)
+    private Training training;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "section_students", joinColumns = @JoinColumn(name = "section_id"), inverseJoinColumns = @JoinColumn(name = "student_id"))

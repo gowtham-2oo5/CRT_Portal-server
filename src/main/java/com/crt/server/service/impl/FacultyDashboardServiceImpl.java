@@ -39,7 +39,7 @@ public class FacultyDashboardServiceImpl implements FacultyDashboardService {
                 .id(faculty.getId().toString())
                 .name(faculty.getName())
                 .email(faculty.getEmail())
-                .department(faculty.getDepartment() != null ? faculty.getDepartment().getDisplayName() : null)
+                .department(faculty.getBranch() != null ? faculty.getBranch().name() : null)
                 .employeeId(faculty.getEmployeeId())
                 .phone(faculty.getPhone())
                 .build();

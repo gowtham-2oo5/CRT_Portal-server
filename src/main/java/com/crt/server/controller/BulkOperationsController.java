@@ -37,11 +37,11 @@ public class BulkOperationsController {
     private RoomService roomService;
 
     @Autowired
-    private TrainerService trainerService;
+    private TrainingService TrainingService;
 
     @Autowired
     private SectionService sectionService;
-    
+
     @Autowired
     private AttendanceService attendanceService;
 
@@ -90,21 +90,43 @@ public class BulkOperationsController {
         }
     }
 
-    @PostMapping(value = "/trainers/upload", consumes = "multipart/form-data")
-    public ResponseEntity<?> bulkUploadTrainers(@RequestParam("file") MultipartFile file) {
+    @PostMapping(value = "/Trainings/upload", consumes = "multipart/form-data")
+    public ResponseEntity<?> bulkUploadTrainings(@RequestParam("file") MultipartFile file) {
         try {
-            List<TrainerDTO> uploadedTrainers = trainerService.bulkCreateTrainers(file);
+            List<TrainingDTO> uploadedTrainings = TrainingService.bulkCreateTrainings(file);
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body(uploadedTrainers);
+                    .body(uploadedTrainings);
         } catch (Exception e) {
-            log.error("Error in bulk trainer upload: {}", e.getMessage());
+            log.error("Error in bulk Training upload: {}", e.getMessage());
             ErrorResponse error = ErrorResponse.builder()
                     .timestamp(LocalDateTime.now())
                     .status(HttpStatus.BAD_REQUEST.value())
                     .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                     .message(e.getMessage())
-                    .path("/api/bulk/trainers/upload")
+                    .path("/api/bulk/Trainings/upload")
+                    .build();
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(error);
+        }
+    }
+
+    @PostMapping(value = "/section/upload", consumes = "multipart/form-data")
+    public ResponseEntity<?> bulkUploadSections(@RequestParam("file") MultipartFile file) {
+        try {
+            List<SectionDTO> uploadedSections = sectionService.bulkCreateSections(file);
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(uploadedSections);
+        } catch (Exception e) {
+            log.error("Error in bulk Training upload: {}", e.getMessage());
+            ErrorResponse error = ErrorResponse.builder()
+                    .timestamp(LocalDateTime.now())
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                    .message(e.getMessage())
+                    .path("/api/bulk/Trainings/upload")
                     .build();
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
@@ -113,42 +135,13 @@ public class BulkOperationsController {
     }
 
     @PostMapping(value = "/register-students", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> registerStudentsToSection(
-            @RequestParam("sectionId") UUID sectionId,
-            @RequestParam("studentsCSV") MultipartFile studentsCSV) {
+    public ResponseEntity<?> registerStudentsToSections(@RequestParam("file") MultipartFile file) {
 
         try {
-            if (studentsCSV.isEmpty()) {
-                ErrorResponse error = ErrorResponse.builder()
-                        .timestamp(LocalDateTime.now())
-                        .status(HttpStatus.BAD_REQUEST.value())
-                        .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                        .message("File is empty")
-                        .path("/api/bulk/register-students")
-                        .build();
-                return ResponseEntity
-                        .status(HttpStatus.BAD_REQUEST)
-                        .body(error);
-            }
-
-            // FIX: Use thread-safe collection and proper resource management
-            List<String> regNums = Collections.synchronizedList(new ArrayList<>());
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(studentsCSV.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String trimmedLine = line.trim();
-                    if (!trimmedLine.isEmpty()) {
-                        regNums.add(trimmedLine);
-                    }
-                }
-            }
-
-            // FIX: Create defensive copy before passing to service
-            List<String> safeRegNums = CollectionUtils.defensiveCopy(regNums);
-            SectionDTO updatedSection = sectionService.registerStudents(sectionId, safeRegNums);
-            return ResponseEntity.ok(updatedSection);
-
+            List<SectionDTO> sections = sectionService.bulkRegisterStudentsToSections(file);
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(sections);
         } catch (Exception e) {
             log.error("Error in bulk student registration: {}", e.getMessage());
             ErrorResponse error = ErrorResponse.builder()

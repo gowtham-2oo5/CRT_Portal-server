@@ -2,7 +2,7 @@ package com.crt.server.service.impl;
 
 import com.crt.server.dto.StudentDTO;
 import com.crt.server.exception.ResourceNotFoundException;
-import com.crt.server.model.Batch;
+import com.crt.server.model.Branch;
 import com.crt.server.model.Student;
 import com.crt.server.repository.StudentRepository;
 import com.crt.server.service.CsvService;
@@ -41,7 +41,7 @@ public class StudentServiceImpl implements StudentService {
                 .email(studentDTO.getEmail())
                 .phone(studentDTO.getPhone())
                 .regNum(studentDTO.getRegNum())
-                .department(studentDTO.getDepartment())
+                .branch(Branch.valueOf(studentDTO.getDepartment().toUpperCase()))
                 .batch(studentDTO.getBatch())
                 .crtEligibility(studentDTO.getCrtEligibility() != null ? studentDTO.getCrtEligibility() : true)
                 .feedback(studentDTO.getFeedback())
@@ -95,9 +95,9 @@ public class StudentServiceImpl implements StudentService {
         student.setEmail(studentDTO.getEmail());
         student.setPhone(studentDTO.getPhone());
         student.setRegNum(studentDTO.getRegNum());
-        student.setDepartment(studentDTO.getDepartment());
+        student.setBranch(Branch.valueOf(studentDTO.getDepartment()));
         student.setBatch(studentDTO.getBatch());
-        
+
         // Update CRT eligibility and feedback if provided
         if (studentDTO.getCrtEligibility() != null) {
             student.setCrtEligibility(studentDTO.getCrtEligibility());
@@ -130,26 +130,24 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public List<StudentDTO> bulkCreateStudents(MultipartFile file) throws Exception {
-        String[] headers = { "name", "email", "phone", "regNum", "department", "batch" };
+        String[] headers = {"ID","NAME","EMAIL","BRANCH"};
 
         try {
             List<Student> students = csvService.parseCsv(file, headers, record -> {
-                // Validate required fields
                 try {
                     validateRequiredFields(record);
                 } catch (Exception e) {
                     System.err.println(e.getLocalizedMessage());
                 }
 
-                // Create and return Student entity
                 return Student.builder()
-                        .name(record.get("name"))
-                        .email(record.get("email"))
-                        .phone(record.get("phone"))
-                        .regNum(record.get("regNum"))
-                        .department(record.get("department"))
-                        .batch(Batch.valueOf(record.get("batch").trim()))
-                        .crtEligibility(true) // Default to true for bulk imports
+                        .name(record.get("NAME"))
+                        .email(record.get("EMAIL"))
+                        .phone("000")
+                        .regNum(record.get("ID"))
+                        .branch(Branch.valueOf(record.get("BRANCH").toUpperCase()))
+                        .batch(getStudentBatch(record.get("ID")))
+                        .crtEligibility(true)
                         .build();
             });
 
@@ -165,6 +163,10 @@ public class StudentServiceImpl implements StudentService {
         }
     }
 
+    private String getStudentBatch(String regNum) {
+        return "Y" + regNum.charAt(0) + regNum.charAt(1);
+    }
+
     @Override
     public StudentDTO updateCrtEligibility(UUID studentId, Boolean crtEligibility, String reason) {
         Student student = studentRepository.findById(studentId)
@@ -174,14 +176,14 @@ public class StudentServiceImpl implements StudentService {
         student.setFeedback(reason);
 
         Student updatedStudent = studentRepository.save(student);
-        log.info("Updated CRT eligibility for student {} (ID: {}) to {} with reason: {}", 
+        log.info("Updated CRT eligibility for student {} (ID: {}) to {} with reason: {}",
                 student.getRegNum(), studentId, crtEligibility, reason);
 
         return convertToDTO(updatedStudent);
     }
 
     private void validateRequiredFields(org.apache.commons.csv.CSVRecord record) throws Exception {
-        String[] requiredFields = { "name", "email", "phone", "regNum", "department", "batch" };
+        String[] requiredFields = {"ID","NAME","EMAIL","BRANCH"};
         for (String field : requiredFields) {
             if (!record.isSet(field) || record.get(field).trim().isEmpty()) {
                 throw new Exception("Required field '" + field + "' is missing or empty");
@@ -189,18 +191,9 @@ public class StudentServiceImpl implements StudentService {
         }
 
         // Validate email format
-        String email = record.get("email");
+        String email = record.get("EMAIL");
         if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             throw new Exception("Invalid email format for: " + email);
-        }
-
-        // Validate batch value
-        try {
-            String batchValue = record.get("batch").trim();
-            Batch.valueOf(batchValue);
-        } catch (IllegalArgumentException e) {
-            throw new Exception("Invalid batch value: " + record.get("batch") + ". Valid values are: " +
-                    String.join(", ", Batch.values().toString()));
         }
     }
 
@@ -211,7 +204,7 @@ public class StudentServiceImpl implements StudentService {
                 .email(student.getEmail())
                 .phone(student.getPhone())
                 .regNum(student.getRegNum())
-                .department(student.getDepartment())
+                .department(String.valueOf(student.getBranch()))
                 .batch(student.getBatch())
                 .crtEligibility(student.getCrtEligibility())
                 .feedback(student.getFeedback())

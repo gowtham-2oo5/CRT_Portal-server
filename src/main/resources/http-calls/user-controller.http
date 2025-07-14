@@ -5,7 +5,7 @@
 
 ### 1. Create Admin User
 POST {{baseUrl}}/api/users
-Authorization: {{authToken}}
+#Authorization: {{authToken}}
 Content-Type: application/json
 
 {

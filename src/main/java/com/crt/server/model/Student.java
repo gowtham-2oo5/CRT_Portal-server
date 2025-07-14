@@ -26,17 +26,17 @@ public class Student {
     private String email;
 
     @Column(nullable = false)
-    private String phone;
+    @Builder.Default
+    private String phone = "0";
 
     @Column(nullable = false, unique = true)
     private String regNum;
 
     @Column(nullable = false)
-    private String department;
+    private Branch branch;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Batch batch;
+    private String batch;
 
     @Column(nullable = false)
     @Builder.Default

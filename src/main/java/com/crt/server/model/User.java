@@ -55,7 +55,7 @@ public class User implements UserDetails {
     // Faculty-specific fields
     @Enumerated(EnumType.STRING)
     @Column
-    private Department department; // CSE, ME, CE, ECE, EEE
+    private Branch branch; // CSE, ME, CE, ECE, EEE
 
     @Column(unique = true)
     private String employeeId; // Faculty employee ID

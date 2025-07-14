@@ -10,7 +10,7 @@ http-calls/
 ├── user-controller.http                    # User management
 ├── password-controller.http                # Password operations
 ├── room-controller.http                    # Room management
-├── trainer-controller.http                 # Trainer operations
+├── Training-controller.http                 # Training operations
 ├── student-controller.http                 # Student management
 ├── section-controller.http                 # Section operations
 ├── time-slot-controller.http              # Time slot management
@@ -58,11 +58,11 @@ Replace `YOUR_JWT_TOKEN_HERE` in all files with your actual JWT token.
 ### Phase 1: Setup Base Data
 1. **Users** → Create admin and faculty users
 2. **Rooms** → Create rooms for scheduling
-3. **Trainers** → Create trainer profiles
+3. **Trainings** → Create Training profiles
 4. **Students** → Create student records
 
 ### Phase 2: Academic Structure
-1. **Sections** → Create sections and assign trainers
+1. **Sections** → Create sections and assign Trainings
 2. **Time Slots** → Create time slots for classes
 3. **Section Schedules** → Link sections with time slots and rooms
 
@@ -95,7 +95,7 @@ Update this in each file after login:
 ```
 test-data/
 ├── students.csv              # 15 sample students
-├── trainers.csv              # 15 sample trainers
+├── Trainings.csv              # 15 sample Trainings
 ├── rooms.csv                 # 20 sample rooms
 ├── section-students.csv      # Students for section registration
 ├── attendance.csv            # Morning attendance data
@@ -106,7 +106,7 @@ test-data/
 Replace these placeholder UUIDs with actual ones from your responses:
 - User ID: `550e8400-e29b-41d4-a716-446655440000`
 - Room ID: `550e8400-e29b-41d4-a716-446655440001`
-- Trainer ID: `550e8400-e29b-41d4-a716-446655440002`
+- Training ID: `550e8400-e29b-41d4-a716-446655440002`
 - Student ID: `550e8400-e29b-41d4-a716-446655440003`
 - Section ID: `550e8400-e29b-41d4-a716-446655440004`
 
@@ -122,14 +122,14 @@ Replace these placeholder UUIDs with actual ones from your responses:
 
 ### Scenario 2: Admin Management
 1. Login as admin
-2. Create users, rooms, trainers
+2. Create users, rooms, Trainings
 3. Set up sections and schedules
 4. View dashboard metrics
 5. Check recent activities
 
 ### Scenario 3: Bulk Operations
 1. Upload student CSV
-2. Upload trainer CSV
+2. Upload Training CSV
 3. Create rooms from CSV
 4. Register students to sections
 5. Mark bulk attendance

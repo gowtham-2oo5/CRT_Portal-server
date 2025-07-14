@@ -12,6 +12,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateSectionDTO {
-    private UUID trainerId;
+    private UUID TrainingId;
     private String sectionName;
 }

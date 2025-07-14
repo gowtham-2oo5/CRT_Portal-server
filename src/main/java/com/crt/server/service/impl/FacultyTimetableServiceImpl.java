@@ -59,7 +59,7 @@ public class FacultyTimetableServiceImpl implements FacultyTimetableService {
                 .map(section -> AssignedSectionDTO.builder()
                         .id(section.getId().toString())
                         .name(section.getName())
-                        .trainerName(section.getTrainer().getName())
+                        .TrainingName(section.getTraining().getName())
                         .totalStudents(section.getStrength())
                         .build())
                 .collect(Collectors.toList());

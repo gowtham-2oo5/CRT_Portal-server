@@ -15,7 +15,7 @@ import java.util.UUID;
 public class SectionDTO {
     private UUID id;
     private String name;
-    private CRT_TrainerDTO trainer;
+    private TrainingDTO Training;
     private Set<StudentDTO> students;
     private Integer strength;
 }

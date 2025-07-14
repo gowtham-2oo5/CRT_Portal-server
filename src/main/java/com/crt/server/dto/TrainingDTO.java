@@ -5,13 +5,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AssignedSectionDTO {
-    private String id;
+public class TrainingDTO {
+    private UUID id;
     private String name;
-    private String TrainingName; // Since Training teaches, faculty records attendance
-    private Integer totalStudents;
+    private  String sn;
+    private Integer sections;
 }

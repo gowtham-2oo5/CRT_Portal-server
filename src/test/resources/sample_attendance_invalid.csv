@@ -1,6 +1,0 @@
-studentId,status,feedback
-invalid-uuid,ABSENT,
-550e8400-e29b-41d4-a716-446655440001,INVALID_STATUS,Late due to traffic
-550e8400-e29b-41d4-a716-446655440002,ABSENT,Too long feedback that exceeds the maximum allowed length for the feedback field which should be handled properly by the validation logic
-550e8400-e29b-41d4-a716-446655440003,LATE,
-550e8400-e29b-41d4-a716-446655440004,PRESENT,Should not have feedback 

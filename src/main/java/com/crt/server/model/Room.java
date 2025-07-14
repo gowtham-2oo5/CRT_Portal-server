@@ -38,6 +38,7 @@ public class Room {
     private RoomType roomType;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer capacity = 0;
 
     @OneToMany(mappedBy = "room")

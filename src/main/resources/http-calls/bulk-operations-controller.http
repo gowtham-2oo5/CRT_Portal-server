@@ -15,16 +15,16 @@ Content-Type: text/csv
 < ./test-data/bulk-students-upload.csv
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
-### 2. Bulk Upload Trainers (Using correct CSV file name)
-POST {{baseUrl}}/api/bulk/trainers/upload
+### 2. Bulk Upload Trainings (Using correct CSV file name)
+POST {{baseUrl}}/api/bulk/Trainings/upload
 Authorization: {{authToken}}
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="file"; filename="bulk-trainers-upload.csv"
+Content-Disposition: form-data; name="file"; filename="bulk-Trainings-upload.csv"
 Content-Type: text/csv
 
-< ./test-data/bulk-trainers-upload.csv
+< ./test-data/bulk-Trainings-upload.csv
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
 ### 3. Bulk Create Simple Rooms (Using correct CSV file name)

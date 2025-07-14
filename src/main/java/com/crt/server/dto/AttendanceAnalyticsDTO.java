@@ -41,7 +41,7 @@ public class AttendanceAnalyticsDTO {
         private Integer totalStudents;
         private Integer totalSessions;
         private Double averageAttendance;
-        private String trainerName;
+        private String TrainingName;
     }
     
     @Data

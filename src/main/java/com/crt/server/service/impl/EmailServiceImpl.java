@@ -33,7 +33,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendLoginOtp(String otp, String mail) {
         log.info("Login OTP: {}", otp);
-        //sendEmail(mail, "Your Login OTP Code", buildOtpEmailContent(otp), "OTP");
+        sendEmail(mail, "Your Login OTP Code", buildOtpEmailContent(otp), "OTP");
     }
 
     @Override

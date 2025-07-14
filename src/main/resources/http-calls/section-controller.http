@@ -3,33 +3,33 @@
 @baseUrl = http://localhost:8080
 @authToken = Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiQURNSU4iLCJuYW1lIjoiR293dGhhbSBTaXZhIEt1bWFyIiwidXNlcklkIjoiN2JkYTlmOGQtMDdmOC00N2YyLWE3MjMtMTY4MDAzYThiZTM5IiwiZW1haWwiOiJnb3d0aGFtLmFsYS4yb281QGdtYWlsLmNvbSIsInN1YiI6Imdvd3RoYW0tMm9vNSIsImlhdCI6MTc1MjE2MzE5NCwiZXhwIjoxNzUyMjQ5NTk0fQ._zOnaWsKlTrBwQ8TC3LxhMvLezBppWMX1qJ1WryT8YlvYz6h23j9Ol_LEGkCMib7
 
-### 1. Create Section (Using real trainer UUID - Dr. Sarah Wilson)
+### 1. Create Section (Using real Training UUID - Dr. Sarah Wilson)
 POST {{baseUrl}}/api/sections
 Authorization: {{authToken}}
 Content-Type: application/json
 
 {
-  "trainerId": "282b7486-9517-4c47-a548-6c8e84deeb5f",
+  "TrainingId": "282b7486-9517-4c47-a548-6c8e84deeb5f",
   "sectionName": "CRT-Section-A"
 }
 
-### 2. Create Another Section (Replace trainerId with actual UUID)
+### 2. Create Another Section (Replace TrainingId with actual UUID)
 POST {{baseUrl}}/api/sections
 Authorization: {{authToken}}
 Content-Type: application/json
 
 {
-  "trainerId": "550e8400-e29b-41d4-a716-446655440002",
+  "TrainingId": "550e8400-e29b-41d4-a716-446655440002",
   "sectionName": "CRT-Section-B"
 }
 
-### 3. Create Third Section (Replace trainerId with actual UUID)
+### 3. Create Third Section (Replace TrainingId with actual UUID)
 POST {{baseUrl}}/api/sections
 Authorization: {{authToken}}
 Content-Type: application/json
 
 {
-  "trainerId": "550e8400-e29b-41d4-a716-446655440002",
+  "TrainingId": "550e8400-e29b-41d4-a716-446655440002",
   "sectionName": "CRT-Section-C"
 }
 
@@ -41,8 +41,8 @@ Authorization: {{authToken}}
 GET {{baseUrl}}/api/sections/550e8400-e29b-41d4-a716-446655440004
 Authorization: {{authToken}}
 
-### 6. Get Sections by Trainer (Replace with actual UUID)
-GET {{baseUrl}}/api/sections/trainer/550e8400-e29b-41d4-a716-446655440002
+### 6. Get Sections by Training (Replace with actual UUID)
+GET {{baseUrl}}/api/sections/Training/550e8400-e29b-41d4-a716-446655440002
 Authorization: {{authToken}}
 
 ### 7. Update Section (Replace sectionId with actual UUID)
@@ -51,7 +51,7 @@ Authorization: {{authToken}}
 Content-Type: application/json
 
 {
-  "trainerId": "550e8400-e29b-41d4-a716-446655440002",
+  "TrainingId": "550e8400-e29b-41d4-a716-446655440002",
   "sectionName": "CRT-Section-A-Updated"
 }
 
@@ -78,7 +78,7 @@ Authorization: {{authToken}}
 Content-Type: application/json
 
 {
-  "trainerId": "550e8400-e29b-41d4-a716-446655440002",
+  "TrainingId": "550e8400-e29b-41d4-a716-446655440002",
   "sectionName": "CRT-Advanced-Section"
 }
 
@@ -88,6 +88,6 @@ Authorization: {{authToken}}
 Content-Type: application/json
 
 {
-  "trainerId": "550e8400-e29b-41d4-a716-446655440002",
+  "TrainingId": "550e8400-e29b-41d4-a716-446655440002",
   "sectionName": "CRT-Beginner-Section"
 }

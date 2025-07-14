@@ -59,8 +59,8 @@ Content-Type: application/json
   "capacity": 60
 }
 
-### 2.3 Create Trainer
-POST {{baseUrl}}/api/trainers
+### 2.3 Create Training
+POST {{baseUrl}}/api/Trainings
 Authorization: {{authToken}}
 Content-Type: application/json
 
@@ -86,13 +86,13 @@ Content-Type: text/csv
 ### PHASE 3: ACADEMIC STRUCTURE
 ### ========================================
 
-### 3.1 Create Section (Using real trainer UUID)
+### 3.1 Create Section (Using real Training UUID)
 POST {{baseUrl}}/api/sections
 Authorization: {{authToken}}
 Content-Type: application/json
 
 {
-  "trainerId": "282b7486-9517-4c47-a548-6c8e84deeb5f",
+  "TrainingId": "282b7486-9517-4c47-a548-6c8e84deeb5f",
   "sectionName": "CRT-Section-A"
 }
 
@@ -248,8 +248,8 @@ Authorization: {{authToken}}
 GET {{baseUrl}}/api/students
 Authorization: {{authToken}}
 
-### 8.3 Get All Trainers
-GET {{baseUrl}}/api/trainers
+### 8.3 Get All Trainings
+GET {{baseUrl}}/api/Trainings
 Authorization: {{authToken}}
 
 ### 8.4 Get All Rooms
@@ -268,8 +268,8 @@ Authorization: {{authToken}}
 GET {{baseUrl}}/api/students/regnum/22001
 Authorization: {{authToken}}
 
-### 9.2 Get Trainer by Serial Number
-GET {{baseUrl}}/api/trainers/sn/TR001
+### 9.2 Get Training by Serial Number
+GET {{baseUrl}}/api/Trainings/sn/TR001
 Authorization: {{authToken}}
 
 ### 9.3 Get User by Email
@@ -287,7 +287,7 @@ Authorization: {{authToken}}
 # DELETE {{baseUrl}}/api/sections/REPLACE_WITH_SECTION_UUID
 # Authorization: {{authToken}}
 
-# DELETE {{baseUrl}}/api/trainers/REPLACE_WITH_TRAINER_UUID
+# DELETE {{baseUrl}}/api/Trainings/REPLACE_WITH_Training_UUID
 # Authorization: {{authToken}}
 
 ### ========================================

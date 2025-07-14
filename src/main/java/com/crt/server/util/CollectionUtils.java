@@ -145,9 +145,6 @@ public class CollectionUtils {
         return new ArrayList<>(collection).stream();
     }
 
-    /**
-     * Batch process a large collection to avoid memory issues
-     */
     public static <T, R> List<R> batchProcess(Collection<T> collection, int batchSize, Function<List<T>, List<R>> processor) {
         if (collection == null || collection.isEmpty()) {
             return new ArrayList<>();

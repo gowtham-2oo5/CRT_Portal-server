@@ -1,6 +1,5 @@
 package com.crt.server.dto;
 
-import com.crt.server.model.Batch;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +19,7 @@ public class StudentDTO {
     private String regNum;
     private String department;
     private String section; // Added section field
-    private Batch batch;
+    private String batch;
     private Boolean crtEligibility;
     private String feedback;
     private double attendancePercentage;

@@ -3,7 +3,9 @@ package com.crt.server.service.impl;
 import com.crt.server.dto.AttendanceAnalyticsDTO;
 import com.crt.server.dto.WeeklyTimetableDTO;
 import com.crt.server.model.*;
-import com.crt.server.repository.*;
+import com.crt.server.repository.AttendanceRepository;
+import com.crt.server.repository.AttendanceSessionRepository;
+import com.crt.server.repository.TimeSlotRepository;
 import com.crt.server.service.FacultyAnalyticsService;
 import com.crt.server.service.FacultyTimetableService;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +15,10 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -229,7 +233,7 @@ public class FacultyAnalyticsServiceImpl implements FacultyAnalyticsService {
                             .totalStudents(section.getStrength())
                             .totalSessions(sectionSessions.size())
                             .averageAttendance(averageAttendance)
-                            .trainerName(section.getTrainer().getName())
+                            .TrainingName(section.getTraining().getName())
                             .build();
                 })
                 .collect(Collectors.toList());
