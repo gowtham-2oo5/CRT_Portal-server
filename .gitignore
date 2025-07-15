@@ -13,6 +13,11 @@ src/main/resources/application-*.yml
 *.md
 !README.md
 
+*.py
+mvnw.cmd
+.mvn
+*.sql
+*.sh
 # Compiled files
 *.class
 *.jar

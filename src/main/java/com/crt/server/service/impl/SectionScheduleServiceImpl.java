@@ -14,10 +14,12 @@ import com.crt.server.model.Room;
 import com.crt.server.model.Section;
 import com.crt.server.model.SectionSchedule;
 import com.crt.server.model.TimeSlot;
+import com.crt.server.model.User;
 import com.crt.server.repository.RoomRepository;
 import com.crt.server.repository.SectionRepository;
 import com.crt.server.repository.SectionScheduleRepository;
 import com.crt.server.repository.TimeSlotRepository;
+import com.crt.server.repository.UserRepository;
 import com.crt.server.service.SectionScheduleService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -36,6 +38,9 @@ public class SectionScheduleServiceImpl implements SectionScheduleService {
 
         @Autowired
         private RoomRepository roomRepository;
+
+        @Autowired
+        private UserRepository userRepository;
 
         @Override
         @Transactional
@@ -101,14 +106,41 @@ public class SectionScheduleServiceImpl implements SectionScheduleService {
         @Override
         @Transactional
         public SectionScheduleDTO addTimeSlot(UUID scheduleId, TimeSlotDTO timeSlotDTO) {
+
                 SectionSchedule schedule = sectionScheduleRepository.findById(scheduleId)
                                 .orElseThrow(() -> new EntityNotFoundException("Schedule not found"));
 
+                // Get required entities
+                User inchargeFaculty = userRepository.findById(timeSlotDTO.getInchargeFacultyId())
+                                .orElseThrow(() -> new EntityNotFoundException("Faculty not found"));
+
+                // Determine section and room (use from DTO if provided, otherwise inherit from schedule)
+                Section section;
+                Room room;
+                
+                if (timeSlotDTO.getSectionId() != null) {
+                        section = sectionRepository.findById(timeSlotDTO.getSectionId())
+                                        .orElseThrow(() -> new EntityNotFoundException("Section not found"));
+                } else {
+                        section = schedule.getSection(); // Inherit from schedule
+                }
+                
+                if (timeSlotDTO.getRoomId() != null) {
+                        room = roomRepository.findById(timeSlotDTO.getRoomId())
+                                        .orElseThrow(() -> new EntityNotFoundException("Room not found"));
+                } else {
+                        room = schedule.getRoom(); // Inherit from schedule
+                }
+
+                // Create TimeSlot with all required fields
                 TimeSlot timeSlot = new TimeSlot();
                 timeSlot.setStartTime(timeSlotDTO.getStartTime());
                 timeSlot.setEndTime(timeSlotDTO.getEndTime());
-                timeSlot.setBreak(timeSlotDTO.isBreak());
+                timeSlot.setBreak(timeSlotDTO.getIsBreak());
                 timeSlot.setBreakDescription(timeSlotDTO.getBreakDescription());
+                timeSlot.setInchargeFaculty(inchargeFaculty);
+                timeSlot.setSection(section);
+                timeSlot.setRoom(room);
                 timeSlot.setSchedule(schedule);
 
                 schedule.addTimeSlot(timeSlot);
@@ -127,7 +159,7 @@ public class SectionScheduleServiceImpl implements SectionScheduleService {
 
                 timeSlot.setStartTime(timeSlotDTO.getStartTime());
                 timeSlot.setEndTime(timeSlotDTO.getEndTime());
-                timeSlot.setBreak(timeSlotDTO.isBreak());
+                timeSlot.setBreak(timeSlotDTO.getIsBreak());
                 timeSlot.setBreakDescription(timeSlotDTO.getBreakDescription());
 
                 timeSlotRepository.save(timeSlot);
@@ -153,9 +185,9 @@ public class SectionScheduleServiceImpl implements SectionScheduleService {
         @Override
         @Transactional(readOnly = true)
         public SectionScheduleDTO getScheduleBySection(UUID sectionId) {
-                SectionSchedule schedule = sectionScheduleRepository.findBySectionId(sectionId)
-                                .orElseThrow(() -> new EntityNotFoundException("Schedule not found for section"));
-                return mapToDTO(schedule);
+                return sectionScheduleRepository.findBySectionId(sectionId)
+                                .map(this::mapToDTO)
+                                .orElse(null); // Return null if no schedule found for section
         }
 
         private SectionScheduleDTO mapToDTO(SectionSchedule schedule) {

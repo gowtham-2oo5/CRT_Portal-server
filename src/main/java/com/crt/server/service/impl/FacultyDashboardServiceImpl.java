@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -24,12 +25,20 @@ public class FacultyDashboardServiceImpl implements FacultyDashboardService {
     public FacultyDashboardDTO getFacultyDashboard(User faculty) {
         log.info("Getting dashboard data for faculty: {}", faculty.getUsername());
         
+        // Get schedule data once and reuse
+        List<TodayScheduleDTO> todaySchedule = facultyTimetableService.getTodaySchedule(faculty);
+        List<AssignedSectionDTO> assignedSections = facultyTimetableService.getAssignedSections(faculty);
+        
+        // Get attendance counts in parallel (these are lightweight queries)
+        Long todayCount = getTodayAttendanceCount(faculty);
+        Long weeklyCount = getWeeklyAttendanceCount(faculty);
+        
         return FacultyDashboardDTO.builder()
                 .profile(getFacultyProfile(faculty))
-                .todaySchedule(facultyTimetableService.getTodaySchedule(faculty))
-                .assignedSections(facultyTimetableService.getAssignedSections(faculty))
-                .todayAttendanceCount(getTodayAttendanceCount(faculty))
-                .weeklyAttendanceCount(getWeeklyAttendanceCount(faculty))
+                .todaySchedule(todaySchedule)
+                .assignedSections(assignedSections)
+                .todayAttendanceCount(todayCount)
+                .weeklyAttendanceCount(weeklyCount)
                 .build();
     }
 

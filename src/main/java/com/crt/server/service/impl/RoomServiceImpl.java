@@ -33,7 +33,7 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public RoomDTO createRoom(RoomDTO roomDTO) {
-        if (existsByDetails(roomDTO.getBlock(), roomDTO.getFloor(), roomDTO.getRoomNumber())) {
+        if (existsByDetails(roomDTO.getBlock(), roomDTO.getFloor(), roomDTO.getRoomNumber(), roomDTO.getSubRoom())) {
             throw new RuntimeException("Room already exists");
         }
 
@@ -88,8 +88,8 @@ public class RoomServiceImpl implements RoomService {
         roomRepository.deleteById(id);
     }
 
-    public boolean existsByDetails(String block, String floor, String roomNumber) {
-        return roomRepository.existsByBlockAndFloorAndRoomNumber(block, floor, roomNumber);
+    public boolean existsByDetails(String block, String floor, String roomNumber, String subRoom) {
+        return roomRepository.existsByBlockAndFloorAndRoomNumber(block, floor, roomNumber, subRoom);
     }
 
     @Override

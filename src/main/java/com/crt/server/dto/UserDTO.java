@@ -17,7 +17,9 @@ public class UserDTO {
     private String name;
     private String email;
     private String phone;
+    private String department;
     private String username;
     private Role role;
     private Boolean isFirstLogin;
-    private Boolean isActive;}
+    private Boolean isActive;
+}

@@ -51,7 +51,7 @@ public class TrainingController {
 
 
     @GetMapping("/sn/{sn}")
-    public ResponseEntity<TrainingDTO> getTrainingBySn(@PathVariable String sn) {
+    public ResponseEntity<?> getTrainingBySn(@PathVariable String sn) {
         return ResponseEntity.ok(trainingService.getTrainingBySn(sn));
     }
 

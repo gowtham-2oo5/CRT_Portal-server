@@ -22,7 +22,9 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendPasswordEmail(String to, String username, String password) {
-        sendEmail(to, "Your Account Credentials", buildPasswordEmailContent(username, password), "password email");
+        log.info("Sending password email to: {}", to);
+        log.info("Username: {}, Password: {}", username, password);
+        //        sendEmail(to, "Your Account Credentials", buildPasswordEmailContent(username, password), "password email");
     }
 
     @Override
@@ -33,7 +35,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendLoginOtp(String otp, String mail) {
         log.info("Login OTP: {}", otp);
-        sendEmail(mail, "Your Login OTP Code", buildOtpEmailContent(otp), "OTP");
+//        sendEmail(mail, "Your Login OTP Code", buildOtpEmailContent(otp), "OTP");
     }
 
     @Override

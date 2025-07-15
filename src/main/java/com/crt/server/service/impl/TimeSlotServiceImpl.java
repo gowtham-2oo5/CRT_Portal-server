@@ -75,7 +75,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
         TimeSlot timeSlot = new TimeSlot();
         timeSlot.setStartTime(timeSlotDTO.getStartTime());
         timeSlot.setEndTime(timeSlotDTO.getEndTime());
-        timeSlot.setBreak(timeSlotDTO.isBreak());
+        timeSlot.setBreak(timeSlotDTO.getIsBreak());
         timeSlot.setBreakDescription(timeSlotDTO.getBreakDescription());
         timeSlot.setInchargeFaculty(inchargeFaculty);
         timeSlot.setSection(section);
@@ -128,7 +128,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
 
         timeSlot.setStartTime(timeSlotDTO.getStartTime());
         timeSlot.setEndTime(timeSlotDTO.getEndTime());
-        timeSlot.setBreak(timeSlotDTO.isBreak());
+        timeSlot.setBreak(timeSlotDTO.getIsBreak());
         timeSlot.setBreakDescription(timeSlotDTO.getBreakDescription());
         timeSlot.setInchargeFaculty(inchargeFaculty);
         timeSlot.setRoom(room);

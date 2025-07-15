@@ -3,12 +3,16 @@ package com.crt.server.service.impl;
 import com.crt.server.dto.AuthResponseDTO;
 import com.crt.server.dto.UserDTO;
 import com.crt.server.exception.ResourceNotFoundException;
+import com.crt.server.model.Branch;
+import com.crt.server.model.Role;
 import com.crt.server.model.User;
 import com.crt.server.repository.UserRepository;
 import com.crt.server.service.EmailService;
 import com.crt.server.service.UserService;
 import com.crt.server.util.PasswordGenerator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,42 +24,97 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EmailService emailService;
 
     @Override
     public UserDTO createUser(UserDTO createUserDTO) {
-        // Check if username or email already exists
-        if (existsByUsername(createUserDTO.getUsername())) {
+        log.info("Creating user with username: {} and email: {}", createUserDTO.getUsername(), createUserDTO.getEmail());
+
+        // Validate input
+        if (createUserDTO.getUsername() == null || createUserDTO.getUsername().trim().isEmpty()) {
+            throw new RuntimeException("Username cannot be null or empty");
+        }
+        if (createUserDTO.getEmail() == null || createUserDTO.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("Email cannot be null or empty");
+        }
+
+        // Trim whitespace
+        String username = createUserDTO.getUsername().trim();
+        String email = createUserDTO.getEmail().trim().toLowerCase();
+
+        boolean usernameExists = existsByUsername(username);
+        boolean emailExists = existsByEmail(email);
+
+        log.info("Username '{}' exists: {}", username, usernameExists);
+        log.info("Email '{}' exists: {}", email, emailExists);
+
+        if (usernameExists) {
+            log.error("Username already exists: {}", username);
             throw new RuntimeException("Username already exists");
         }
-        if (existsByEmail(createUserDTO.getEmail())) {
+
+        if (emailExists) {
+            log.error("Email already exists: {}", email);
             throw new RuntimeException("Email already exists");
         }
 
         String generatedPassword = PasswordGenerator.generatePassword();
+        log.info("Generated password for user: {}", username);
 
         User user = User.builder()
                 .name(createUserDTO.getName())
-                .email(createUserDTO.getEmail())
+                .email(email)  // Use trimmed/lowercase email
                 .phone(createUserDTO.getPhone())
-                .username(createUserDTO.getUsername())
+                .username(username)  // Use trimmed username
                 .password(passwordEncoder.encode(generatedPassword))
                 .role(createUserDTO.getRole())
                 .isFirstLogin(true)
                 .isActive(createUserDTO.getIsActive() != null ? createUserDTO.getIsActive() : true)
                 .build();
 
-        // Save user
-        User savedUser = userRepository.save(user);
+        // Set branch if department is provided (for faculty)
+        if (createUserDTO.getDepartment() != null && !createUserDTO.getDepartment().trim().isEmpty()) {
+            try {
+                user.setBranch(Branch.valueOf(createUserDTO.getDepartment().trim().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid department/branch: {}", createUserDTO.getDepartment());
+                // Continue without setting branch
+            }
+        }
 
-        // Send email with credentials
-        emailService.sendPasswordEmail(savedUser.getEmail(), savedUser.getUsername(), generatedPassword);
+        log.info("About to save user: {}", user.getUsername());
 
-        return convertToDTO(savedUser);
+        try {
+            // Save user
+            User savedUser = userRepository.save(user);
+            log.info("Successfully saved user with ID: {}", savedUser.getId());
+
+            // Send email with credentials (non-critical - don't fail if email fails)
+            try {
+                log.info("Sending password email to: {}", savedUser.getEmail());
+                emailService.sendPasswordEmail(savedUser.getEmail(), savedUser.getUsername(), generatedPassword);
+                log.info("Password email sent successfully");
+            } catch (Exception emailException) {
+                log.warn("Failed to send password email to {}: {}", savedUser.getEmail(), emailException.getMessage());
+                // Don't fail user creation if email fails
+            }
+
+            return convertToDTO(savedUser);
+            
+        } catch (Exception e) {
+            log.error("Failed to save user: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create user: " + e.getMessage());
+        }
     }
 
     @Override
@@ -63,6 +122,12 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return convertToDTO(user);
+    }
+
+    @Override
+    public User getFacById(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     @Override
@@ -82,6 +147,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UserDTO> getAllFacs() {
+        return userRepository.findActiveUsersByRole(Role.FACULTY).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -186,6 +258,7 @@ public class UserServiceImpl implements UserService {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .username(user.getUsername())
+                .department(user.getBranch() != null ? user.getBranch().name() : null)
                 .role(user.getRole())
                 .isFirstLogin(user.isFirstLogin())
                 .isActive(user.isActive())

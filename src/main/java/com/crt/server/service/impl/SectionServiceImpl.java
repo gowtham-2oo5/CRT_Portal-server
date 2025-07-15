@@ -225,7 +225,10 @@ public class SectionServiceImpl implements SectionService {
                 String trainingName = record.get("TRAINING");
                 String sectionsString = record.get("SECTIONS");
 
-                Training training = trainingService.getTrainingByName(trainingName);
+                System.out.println("Training STRING [DEBUG]" + trainingName);
+
+                Training training = getTraining(trainingName);
+
                 if (training == null) {
                     throw new RuntimeException("Training not found: " + trainingName);
                 }
@@ -256,6 +259,14 @@ public class SectionServiceImpl implements SectionService {
             log.error("Error in bulk Training creation: {}", e.getMessage());
             throw new Exception("Error processing Training data: " + e.getMessage());
         }
+    }
+
+    private Training getTraining(String trainingName) {
+        Training t = trainingService.getTrainingByName(trainingName);
+        if(t == null) {
+            t = trainingService.getTrainingBySn(trainingName);
+        }
+        return t;
     }
 
     @Override

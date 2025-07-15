@@ -13,7 +13,7 @@ public interface TrainingService {
     TrainingDTO getTrainingById(UUID id);
 
 
-    TrainingDTO getTrainingBySn(String sn);
+    Training getTrainingBySn(String sn);
 
     Training getTrainingByName(String name);
 

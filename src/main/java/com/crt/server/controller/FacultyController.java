@@ -2,10 +2,7 @@ package com.crt.server.controller;
 
 import com.crt.server.dto.*;
 import com.crt.server.model.User;
-import com.crt.server.service.CurrentUserService;
-import com.crt.server.service.FacultyAttendanceService;
-import com.crt.server.service.FacultyDashboardService;
-import com.crt.server.service.FacultyTimetableService;
+import com.crt.server.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -29,13 +26,14 @@ public class FacultyController {
     private final FacultyTimetableService facultyTimetableService;
     private final FacultyAttendanceService facultyAttendanceService;
     private final CurrentUserService currentUserService;
+    private final UserService userService;
 
     @GetMapping("/dashboard")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('FACULTY')")
     @Operation(summary = "Get faculty dashboard data", description = "Returns complete faculty dashboard with profile, schedule, sections, and attendance counts")
-    public ResponseEntity<FacultyDashboardDTO> getFacultyDashboard() {
+    public ResponseEntity<FacultyDashboardDTO> getFacultyDashboard(@RequestParam("id") UUID id) {
         log.info("Getting faculty dashboard data");
-        User currentUser = currentUserService.getCurrentUser();
+        User currentUser = userService.getFacById(id);
         FacultyDashboardDTO dashboard = facultyDashboardService.getFacultyDashboard(currentUser);
         return ResponseEntity.ok(dashboard);
     }
@@ -43,9 +41,9 @@ public class FacultyController {
     @GetMapping("/timetable")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('FACULTY')")
     @Operation(summary = "Get faculty timetable", description = "Returns today's schedule with active session detection")
-    public ResponseEntity<List<TodayScheduleDTO>> getFacultyTimetable() {
+    public ResponseEntity<List<TodayScheduleDTO>> getFacultyTimetable(@RequestParam("id") UUID id) {
         log.info("Getting faculty timetable");
-        User currentUser = currentUserService.getCurrentUser();
+        User currentUser = userService.getFacById(id);
         List<TodayScheduleDTO> schedule = facultyTimetableService.getTodaySchedule(currentUser);
         return ResponseEntity.ok(schedule);
     }
@@ -53,9 +51,9 @@ public class FacultyController {
     @GetMapping("/current-session")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('FACULTY')")
     @Operation(summary = "Get current active session", description = "Returns current active time slot if any")
-    public ResponseEntity<CurrentSessionDTO> getCurrentSession() {
+    public ResponseEntity<CurrentSessionDTO> getCurrentSession(@RequestParam("id") UUID id) {
         log.info("Getting current active session");
-        User currentUser = currentUserService.getCurrentUser();
+        User currentUser = userService.getFacById(id);
         
         return facultyTimetableService.getCurrentActiveTimeSlot(currentUser)
                 .map(timeSlot -> {
@@ -130,9 +128,9 @@ public class FacultyController {
     @GetMapping("/sections")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('FACULTY')")
     @Operation(summary = "Get assigned sections", description = "Returns all sections assigned to the faculty")
-    public ResponseEntity<List<AssignedSectionDTO>> getAssignedSections() {
+    public ResponseEntity<List<AssignedSectionDTO>> getAssignedSections(@RequestParam(required = true) UUID id) {
         log.info("Getting assigned sections for faculty");
-        User currentUser = currentUserService.getCurrentUser();
+        User currentUser = userService.getFacById(id);
         List<AssignedSectionDTO> sections = facultyTimetableService.getAssignedSections(currentUser);
         return ResponseEntity.ok(sections);
     }

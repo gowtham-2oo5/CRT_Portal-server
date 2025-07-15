@@ -18,6 +18,14 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, Integer> {
 
     List<TimeSlot> findByInchargeFaculty(User inchargeFaculty);
 
+    // Optimized query with eager loading to prevent N+1 queries
+    @Query("SELECT ts FROM TimeSlot ts " +
+           "JOIN FETCH ts.section s " +
+           "JOIN FETCH s.training " +
+           "JOIN FETCH ts.room " +
+           "WHERE ts.inchargeFaculty = :faculty")
+    List<TimeSlot> findByInchargeFacultyWithDetails(@Param("faculty") User faculty);
+
     @Query("SELECT ts FROM TimeSlot ts WHERE ts.section = :section AND ts.isBreak = false")
     List<TimeSlot> findActiveTimeSlotsBySection(@Param("section") Section section);
 

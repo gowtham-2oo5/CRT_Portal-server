@@ -29,8 +29,8 @@ public class FacultyTimetableServiceImpl implements FacultyTimetableService {
     public List<TodayScheduleDTO> getTodaySchedule(User faculty) {
         log.info("Getting today's schedule for faculty: {}", faculty.getUsername());
         
-        // Get all time slots for faculty (since TimeSlot doesn't have day field)
-        List<TimeSlot> facultySlots = timeSlotRepository.findByInchargeFaculty(faculty);
+        // Use optimized query with eager loading
+        List<TimeSlot> facultySlots = timeSlotRepository.findByInchargeFacultyWithDetails(faculty);
         
         return facultySlots.stream()
                 .filter(slot -> !slot.isBreak()) // Exclude break slots
@@ -50,7 +50,8 @@ public class FacultyTimetableServiceImpl implements FacultyTimetableService {
     public List<AssignedSectionDTO> getAssignedSections(User faculty) {
         log.info("Getting assigned sections for faculty: {}", faculty.getUsername());
         
-        List<TimeSlot> facultyTimeSlots = timeSlotRepository.findByInchargeFaculty(faculty);
+        // Use optimized query with eager loading
+        List<TimeSlot> facultyTimeSlots = timeSlotRepository.findByInchargeFacultyWithDetails(faculty);
         
         return facultyTimeSlots.stream()
                 .filter(slot -> !slot.isBreak())
@@ -67,7 +68,8 @@ public class FacultyTimetableServiceImpl implements FacultyTimetableService {
 
     @Override
     public Optional<TimeSlot> getCurrentActiveTimeSlot(User faculty) {
-        List<TimeSlot> facultySlots = timeSlotRepository.findByInchargeFaculty(faculty);
+        // Use optimized query
+        List<TimeSlot> facultySlots = timeSlotRepository.findByInchargeFacultyWithDetails(faculty);
         
         return facultySlots.stream()
                 .filter(this::isTimeSlotActive)

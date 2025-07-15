@@ -17,11 +17,12 @@ public interface RoomRepository extends JpaRepository<Room, UUID> {
                         @Param("floor") String floor,
                         @Param("roomNumber") String roomNumber);
 
-        @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Room r WHERE r.block = :block AND r.floor = :floor AND r.roomNumber = :roomNumber")
+        @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Room r WHERE r.block = :block AND r.floor = :floor AND r.roomNumber = :roomNumber AND r.subRoom = :subRoom")
         boolean existsByBlockAndFloorAndRoomNumber(
-                        @Param("block") String block,
-                        @Param("floor") String floor,
-                        @Param("roomNumber") String roomNumber);
+                @Param("block") String block,
+                @Param("floor") String floor,
+                @Param("roomNumber") String roomNumber,
+                @Param("subRoom")String subRoom);
 
         @Query("SELECT CASE WHEN COUNT(r) > 0 then TRUE ELSE false END FROM Room r WHERE r.roomNumber = :s")
         Boolean existsByRoomNumber(String s);

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class TrainingServiceImpl implements TrainingService {
 
-    private final TrainingRepository TrainingRepository;
+    private final TrainingRepository trainingRepo;
     private final CsvService csvService;
 
     @Override
@@ -36,23 +37,22 @@ public class TrainingServiceImpl implements TrainingService {
                 .sn(trainingDTO.getSn())
                 .build();
 
-        Training savedTraining = TrainingRepository.save(training);
+        Training savedTraining = trainingRepo.save(training);
         return convertToDTO(savedTraining);
     }
 
     @Override
     public TrainingDTO getTrainingById(UUID id) {
-        Training training = TrainingRepository.findById(id)
+        Training training = trainingRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Training not found"));
         return convertToDTO(training);
     }
 
 
     @Override
-    public TrainingDTO getTrainingBySn(String sn) {
+    public Training getTrainingBySn(String sn) {
         try {
-            Training training = TrainingRepository.findBySn(sn);
-            return convertToDTO(training);
+            return trainingRepo.findBySn(sn);
         } catch (Exception e) {
             throw new ResourceNotFoundException("Training not found with short name: " + sn);
         }
@@ -60,45 +60,45 @@ public class TrainingServiceImpl implements TrainingService {
 
     @Override
     public Training getTrainingByName(String name) {
-        return TrainingRepository.findByName(name);
+        return trainingRepo.findByName(name);
     }
 
     @Override
     public List<TrainingDTO> getAllTrainings() {
-        return TrainingRepository.findAll().stream()
+        return trainingRepo.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     public TrainingDTO updateTraining(UUID id, TrainingDTO trainingDTO) {
-        Training training = TrainingRepository.findById(id)
+        Training training = trainingRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Training not found"));
 
         training.setName(trainingDTO.getName());
         training.setSn(trainingDTO.getSn());
 
-        Training updatedTraining = TrainingRepository.save(training);
+        Training updatedTraining = trainingRepo.save(training);
         return convertToDTO(updatedTraining);
     }
 
     @Override
     public void deleteTraining(UUID id) {
-        if (!TrainingRepository.existsById(id)) {
+        if (!trainingRepo.existsById(id)) {
             throw new ResourceNotFoundException("Training not found");
         }
-        TrainingRepository.deleteById(id);
+        trainingRepo.deleteById(id);
     }
 
 
     @Override
     public boolean existsBySn(String sn) {
-        return TrainingRepository.existsBySn(sn);
+        return trainingRepo.existsBySn(sn);
     }
 
     @Override
     public boolean existsByName(String name) {
-        return TrainingRepository.existsByName(name);
+        return trainingRepo.existsByName(name);
     }
 
     @Override
@@ -107,18 +107,16 @@ public class TrainingServiceImpl implements TrainingService {
 
         try {
             List<Training> trainings = csvService.parseCsv(file, headers, record -> {
-                // Validate required fields
                 validateRequiredFields(record);
 
-                // Create and return Training entity
                 return Training.builder()
                         .name(record.get("NAME"))
                         .sn((record.get("SN") == null) ? record.get("NAME").trim().substring(0, 2) : record.get("SN"))
+                        .sections(new HashSet<>())
                         .build();
             });
 
-            // Save all Trainings in a single transaction
-            List<Training> savedTrainings = TrainingRepository.saveAll(trainings);
+            List<Training> savedTrainings = trainingRepo.saveAll(trainings);
             return savedTrainings.stream()
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
