@@ -13,8 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -34,33 +32,33 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
     @Transactional
     public AttendanceSessionResponseDTO submitAttendance(User faculty, AttendanceSubmissionDTO submissionDTO) {
         log.info("Submitting attendance for faculty: {} on date: {}", faculty.getUsername(), submissionDTO.getDate());
-        
+
         // Validate inputs
         TimeSlot timeSlot = timeSlotRepository.findById(Integer.valueOf(submissionDTO.getTimeSlotId()))
                 .orElseThrow(() -> new ResourceNotFoundException("TimeSlot not found"));
-        
+
         Section section = sectionRepository.findById(UUID.fromString(submissionDTO.getSectionId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
-        
+
         LocalDate date = LocalDate.parse(submissionDTO.getDate());
-        
+
         // Validate faculty can submit attendance
         if (!canSubmitAttendance(faculty, timeSlot, submissionDTO.getDate())) {
             throw new IllegalStateException("Faculty cannot submit attendance for this time slot");
         }
-        
+
         // Check for duplicate submission
         if (isAttendanceAlreadySubmitted(faculty, timeSlot, submissionDTO.getDate())) {
             throw new IllegalStateException("Attendance already submitted for this time slot and date");
         }
-        
+
         // Calculate attendance statistics
         int totalStudents = submissionDTO.getAttendanceRecords().size();
         int presentCount = (int) submissionDTO.getAttendanceRecords().stream()
                 .mapToInt(record -> record.isPresent() ? 1 : 0)
                 .sum();
         int absentCount = totalStudents - presentCount;
-        
+
         // Create attendance session
         AttendanceSession attendanceSession = AttendanceSession.builder()
                 .faculty(faculty)
@@ -72,14 +70,14 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
                 .presentCount(presentCount)
                 .absentCount(absentCount)
                 .build();
-        
+
         attendanceSession = attendanceSessionRepository.save(attendanceSession);
-        
+
         // Create individual attendance records
         for (AttendanceSubmissionDTO.StudentAttendanceRecordDTO record : submissionDTO.getAttendanceRecords()) {
             Student student = studentRepository.findById(UUID.fromString(record.getStudentId()))
                     .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + record.getStudentId()));
-            
+
             Attendance attendance = Attendance.builder()
                     .student(student)
                     .timeSlot(timeSlot)
@@ -88,12 +86,12 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
                     .date(date.atStartOfDay())
                     .attendanceSession(attendanceSession)
                     .build();
-            
+
             attendanceRepository.save(attendance);
         }
-        
+
         log.info("Attendance submitted successfully. Session ID: {}", attendanceSession.getId());
-        
+
         return AttendanceSessionResponseDTO.builder()
                 .id(attendanceSession.getId().toString())
                 .facultyId(faculty.getId().toString())
@@ -115,14 +113,17 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
     public List<StudentDTO> getStudentsForSection(UUID sectionId) {
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
-        
+
         return section.getStudents().stream()
                 .map(student -> StudentDTO.builder()
                         .id(student.getId().toString())
-                        .rollNumber(student.getRegNum()) // Using regNum as rollNumber
+                        .rollNumber(student.getRegNum())
                         .name(student.getName())
                         .email(student.getEmail())
-                        .section(section.getName()) // Using section name from the section
+                        .crtEligibility(student.getCrtEligibility())
+                        .department(student.getBranch().name())
+                        .batch(student.getBatch())
+                        .section(section.getName())
                         .build())
                 .collect(Collectors.toList());
     }

@@ -6,8 +6,10 @@ env.template.txt
 
 # Application Configuration
 src/main/resources/application.yml
+src/main/resources/application.yaml
 src/main/resources/application-*.yml
 !src/main/resources/application-dev.yml
+!src/main/resources/application.yaml.example
 
 # Documentation files (except README)
 *.md
