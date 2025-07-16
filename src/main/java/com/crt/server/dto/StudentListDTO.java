@@ -1,5 +1,6 @@
 package com.crt.server.dto;
 
+import com.crt.server.model.TimeSlot;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,4 +17,5 @@ public class StudentListDTO {
     private Integer totalCount;
     private String sectionName;
     private String sectionId;
+    private TimeSlotDTO timeSlot;
 }

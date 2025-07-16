@@ -57,10 +57,9 @@ public class AttendanceController {
 
     @GetMapping("/time-slot/{timeSlotId}")
     public ResponseEntity<List<AttendanceDTO>> getTimeSlotAttendance(
-            @PathVariable Integer timeSlotId,
-            @RequestParam String date) {
+            @PathVariable Integer timeSlotId) {
         try {
-            LocalDateTime dateTime = parseDateTime(date);
+            LocalDateTime dateTime = LocalDateTime.now();
             log.info("Getting attendance for time slot: {} on date: {}", timeSlotId, dateTime);
             return ResponseEntity.ok(attendanceService.getTimeSlotAttendance(timeSlotId, dateTime));
         } catch (DateTimeParseException e) {

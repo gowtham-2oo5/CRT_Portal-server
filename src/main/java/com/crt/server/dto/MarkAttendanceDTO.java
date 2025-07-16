@@ -15,6 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MarkAttendanceDTO {
+
     private Integer timeSlotId;
     private String dateTime;
     private List<UUID> absentStudentIds;

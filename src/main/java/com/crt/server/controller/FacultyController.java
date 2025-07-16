@@ -27,6 +27,8 @@ public class FacultyController {
     private final FacultyAttendanceService facultyAttendanceService;
     private final CurrentUserService currentUserService;
     private final UserService userService;
+    private final SectionService sectionService;
+    private final TimeSlotService timeSlotService;
 
     @GetMapping("/dashboard")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('FACULTY')")
@@ -101,6 +103,9 @@ public class FacultyController {
         StudentListDTO response = StudentListDTO.builder()
                 .students(students)
                 .totalCount(students.size())
+                .sectionId(sectionService.getSectionByName(students.getFirst().getSection()).getId().toString())
+                .sectionName(students.getFirst().getSection())
+                .timeSlot(timeSlotService.getTimeSlot(timeSlotId))
                 .build();
         
         return ResponseEntity.ok(response);

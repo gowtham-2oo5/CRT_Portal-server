@@ -18,4 +18,5 @@ public class TimeSlotDTO {
     private UUID inchargeFacultyId;
     private UUID sectionId;
     private UUID roomId;
+    private String roomName;
 }

@@ -14,8 +14,8 @@ import java.util.List;
 public class AttendanceSubmissionDTO {
     private String timeSlotId;
     private String sectionId;
-    private String topicTaught; // What was taught in class today
-    private String date; // Format: "2024-06-26"
+    private String topicTaught;
+    private String date;
     private List<StudentAttendanceRecordDTO> attendanceRecords;
     
     @Data

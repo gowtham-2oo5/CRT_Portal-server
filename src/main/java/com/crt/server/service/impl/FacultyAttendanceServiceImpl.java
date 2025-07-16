@@ -129,9 +129,10 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
 
     @Override
     public List<StudentDTO> getStudentsForTimeSlot(Integer timeSlotId) {
+        System.out.println("Getting students for time slot: " + timeSlotId);
         TimeSlot timeSlot = timeSlotRepository.findById(timeSlotId)
                 .orElseThrow(() -> new ResourceNotFoundException("TimeSlot not found"));
-        
+        System.out.println("Time slot found: " + timeSlot.getStartTime() + "-" + timeSlot.getEndTime() + " " + timeSlot.getSection().getName());
         return getStudentsForSection(timeSlot.getSection().getId());
     }
 

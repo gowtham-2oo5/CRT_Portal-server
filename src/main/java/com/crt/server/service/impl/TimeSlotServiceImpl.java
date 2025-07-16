@@ -185,6 +185,7 @@ public class TimeSlotServiceImpl implements TimeSlotService {
                 .inchargeFacultyId(timeSlot.getInchargeFaculty().getId())
                 .sectionId(timeSlot.getSection().getId())
                 .roomId(timeSlot.getRoom().getId())
+                .roomName(timeSlot.getRoom().getRoomNumber())
                 .build();
     }
 
