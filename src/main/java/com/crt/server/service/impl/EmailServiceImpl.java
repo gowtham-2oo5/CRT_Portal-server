@@ -29,6 +29,8 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendPasswordResetEmail(String to, String resetToken) {
+        log.info("Sending password reset email to: {}", to);
+        log.info("Reset token: {}", resetToken);
         sendEmail(to, "Password Reset Request", buildPasswordResetEmailContent(resetToken), "password reset email");
     }
 

@@ -8,7 +8,7 @@ Content-Type: application/json
 
 {
   "usernameOrEmail": "gowtham.ala.2oo5@gmail.com",
-  "password": "Gowtham$2oo5"
+  "password": "Gowth$2k5"
 }
 
 ### 2. Login with Username
@@ -26,7 +26,7 @@ Content-Type: application/json
 
 {
   "usernameOrEmail": "gowtham.ala.2oo5@gmail.com",
-  "otp": "266068"
+  "otp": "297065"
 }
 
 ### 4. Refresh Token

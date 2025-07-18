@@ -49,6 +49,7 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<AuthResponseDTO> forgotPassword(@RequestParam String email) {
+        System.out.println("Email: " + email);
         return ResponseEntity.ok(authService.forgotPassword(email));
     }
 }

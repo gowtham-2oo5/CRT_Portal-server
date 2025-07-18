@@ -1,10 +1,7 @@
 package com.crt.server.dto;
 
 import com.crt.server.model.Role;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.UUID;
 
@@ -12,12 +9,14 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class UserDTO {
     private UUID id;
     private String name;
     private String email;
     private String phone;
     private String department;
+    private String employeeId;
     private String username;
     private Role role;
     private Boolean isFirstLogin;

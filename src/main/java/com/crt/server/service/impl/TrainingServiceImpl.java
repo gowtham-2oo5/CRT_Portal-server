@@ -35,6 +35,7 @@ public class TrainingServiceImpl implements TrainingService {
         Training training = Training.builder()
                 .name(trainingDTO.getName())
                 .sn(trainingDTO.getSn())
+                .sections(new HashSet<>())
                 .build();
 
         Training savedTraining = trainingRepo.save(training);

@@ -27,15 +27,15 @@ public class UserController {
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody UserDTO createUserDTO) {
         try {
+            log.info("Creating user: {}", createUserDTO);
             UserDTO response = userService.createUser(createUserDTO);
-            return ResponseEntity
+        return ResponseEntity
                     .status(HttpStatus.CREATED)
                     .body(response);
         } catch (Exception e) {
             log.error("Error creating user: {}", e.getMessage(), e);
             
-            // Check if it's actually a duplicate user error
-            if (e.getMessage().contains("Username already exists") || 
+            if (e.getMessage().contains("Username already exists") ||
                 e.getMessage().contains("Email already exists")) {
                 ErrorResponse error = ErrorResponse.builder()
                         .timestamp(LocalDateTime.now())

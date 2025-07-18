@@ -5,6 +5,7 @@ import com.crt.server.dto.SectionDTO;
 import com.crt.server.exception.ErrorResponse;
 import com.crt.server.service.CsvService;
 import com.crt.server.service.SectionService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/sections")
 public class SectionController {
@@ -28,6 +30,7 @@ public class SectionController {
 
     @PostMapping
     public ResponseEntity<SectionDTO> createSection(@RequestBody CreateSectionDTO createSectionDTO) {
+        log.info("Creating section: {}", createSectionDTO);
         return ResponseEntity.ok(sectionService.createSection(createSectionDTO));
     }
 
@@ -54,6 +57,21 @@ public class SectionController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{sectionId}")
+    public ResponseEntity<?> registerStudentToSection(
+            @PathVariable String sectionId,
+            @RequestParam String studentId) {
+        try {
+            return ResponseEntity
+                    .ok(sectionService.registerStudent(UUID.fromString(sectionId), studentId));
+        } catch (Exception e) {
+            log.error("Error registering student to section: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
+        }
+    }
+
     @PostMapping(value = "/{sectionId}/students", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> registerStudents(
             @PathVariable UUID sectionId,
@@ -75,7 +93,7 @@ public class SectionController {
             // Use CsvService to parse CSV and extract regNum field
             String[] headers = {"regNum"};
             List<String> regNums = csvService.parseCsv(studentsCSV, headers, record -> record.get("regNum"));
-            
+
             if (regNums.isEmpty()) {
                 ErrorResponse error = ErrorResponse.builder()
                         .timestamp(LocalDateTime.now())
@@ -88,10 +106,10 @@ public class SectionController {
                         .status(HttpStatus.BAD_REQUEST)
                         .body(error);
             }
-            
+
             System.out.println("regNums: " + regNums);
             return ResponseEntity.ok(sectionService.registerStudents(sectionId, regNums));
-            
+
         } catch (Exception e) {
             ErrorResponse error = ErrorResponse.builder()
                     .timestamp(LocalDateTime.now())

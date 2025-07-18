@@ -16,6 +16,7 @@ public class TimeSlotDTO {
     private Boolean isBreak;
     private String breakDescription;
     private UUID inchargeFacultyId;
+    private String inchargeFacultyName;
     private UUID sectionId;
     private UUID roomId;
     private String roomName;

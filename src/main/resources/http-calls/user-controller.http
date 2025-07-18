@@ -12,10 +12,10 @@ Content-Type: application/json
   "name": "Gowtham Siva Kumar",
   "email": "gowtham.ala.2oo5@gmail.com",
   "phone": "+91 8297299998",
+  "department": "CSE",
+  "employeeId": "1641",
   "username": "gowtham-2oo5",
-  "role": "ADMIN",
-  "isFirstLogin": true,
-  "isActive": true
+  "role": "ADMIN"
 }
 
 ### 2. Create Faculty User

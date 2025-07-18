@@ -203,6 +203,7 @@ public class SectionScheduleController {
             @PathVariable Integer timeSlotId,
             @RequestBody TimeSlotDTO timeSlotDTO) {
         try {
+            System.out.println("Trying to update time slot " + timeSlotId + " in schedule " + scheduleId + " with DTO: " + timeSlotDTO + " ...");
             SectionScheduleDTO updatedSchedule = sectionScheduleService.updateTimeSlot(scheduleId, timeSlotId, timeSlotDTO);
             return ResponseEntity.ok(updatedSchedule);
         } catch (Exception e) {

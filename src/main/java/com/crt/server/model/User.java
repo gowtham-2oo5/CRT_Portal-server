@@ -54,7 +54,7 @@ public class User implements UserDetails {
 
     // Faculty-specific fields
     @Enumerated(EnumType.STRING)
-    @Column
+    @Column(nullable = false)
     private Branch branch; // CSE, ME, CE, ECE, EEE
 
     @Column(unique = true)

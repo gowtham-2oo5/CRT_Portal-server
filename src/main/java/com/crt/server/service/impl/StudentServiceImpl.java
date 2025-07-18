@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -139,7 +140,7 @@ public class StudentServiceImpl implements StudentService {
                 } catch (Exception e) {
                     System.err.println(e.getLocalizedMessage());
                 }
-
+                if(studentRepository.existsByRegNum(record.get("ID"))) return null;
                 return Student.builder()
                         .name(record.get("NAME"))
                         .email(record.get("EMAIL"))
@@ -149,9 +150,8 @@ public class StudentServiceImpl implements StudentService {
                         .batch(getStudentBatch(record.get("ID")))
                         .crtEligibility(true)
                         .build();
-            });
+            }).stream().filter(Objects::nonNull).collect(Collectors.toList());;
 
-            // Save all students in a single transaction
             List<Student> savedStudents = studentRepository.saveAll(students);
             return savedStudents.stream()
                     .map(this::convertToDTO)

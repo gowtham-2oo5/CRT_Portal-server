@@ -48,7 +48,8 @@ public class SectionServiceImpl implements SectionService {
     @Override
     @Transactional
     public SectionDTO createSection(CreateSectionDTO createSectionDTO) {
-        Training training = TrainingRepository.findById(createSectionDTO.getTrainingId())
+        log.info("Creating section: {}", createSectionDTO);
+        Training training = TrainingRepository.findById(UUID.fromString(createSectionDTO.getTrainingId()))
                 .orElseThrow(() -> new RuntimeException("Training not found"));
 
         Section section = new Section();
@@ -83,7 +84,7 @@ public class SectionServiceImpl implements SectionService {
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new RuntimeException("Section not found"));
 
-        Training training = TrainingRepository.findById(updateSectionDTO.getTrainingId())
+        Training training = TrainingRepository.findById(UUID.fromString(updateSectionDTO.getTrainingId()))
                 .orElseThrow(() -> new RuntimeException("Training not found"));
 
         section.setName(training.getSn() + " " + updateSectionDTO.getSectionName());
@@ -109,6 +110,18 @@ public class SectionServiceImpl implements SectionService {
         List<Student> students = studentRepository.findByRegNumIn(regNums);
 
         section.getStudents().addAll(students);
+        section.setStrength(section.getStudents().size());
+        Section updatedSection = sectionRepository.save(section);
+        return mapToDTO(updatedSection);
+    }
+
+    @Override
+    public SectionDTO registerStudent(UUID sectionId, String regNum) {
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Section not found"));
+        Student student = studentRepository.findByRegNum(regNum);
+
+        section.getStudents().add(student);
         section.setStrength(section.getStudents().size());
         Section updatedSection = sectionRepository.save(section);
         return mapToDTO(updatedSection);

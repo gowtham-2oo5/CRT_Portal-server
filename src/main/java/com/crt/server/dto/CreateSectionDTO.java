@@ -1,5 +1,6 @@
 package com.crt.server.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateSectionDTO {
-    private UUID TrainingId;
+    @JsonProperty("TrainingId")
+    private String trainingId;
     private String sectionName;
 }

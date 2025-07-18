@@ -23,6 +23,8 @@ public interface SectionService {
 
     SectionDTO registerStudents(UUID sectionId, List<String> regNums);
 
+    SectionDTO registerStudent(UUID sectionId, String regNum);
+
     List<SectionDTO> bulkRegisterStudentsToSections(MultipartFile file) throws Exception;
 
     List<SectionDTO> getSectionsByTraining(UUID TrainingId);

@@ -26,6 +26,7 @@ public class TrainingController {
     @PostMapping
     public ResponseEntity<?> createTraining(@RequestBody TrainingDTO trainingDTO) {
         try {
+            log.info("Creating training: {}", trainingDTO);
             TrainingDTO response = trainingService.createTraining(trainingDTO);
             return ResponseEntity
                     .status(HttpStatus.CREATED)

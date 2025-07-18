@@ -71,26 +71,32 @@ public class UserServiceImpl implements UserService {
         String generatedPassword = PasswordGenerator.generatePassword();
         log.info("Generated password for user: {}", username);
 
+        Branch branch = null;
+        log.info("Attempting to convert department '{}' to branch enum '{}'", createUserDTO.getDepartment(),Branch.valueOf(createUserDTO.getDepartment()) );
+        if (createUserDTO.getDepartment() != null && !createUserDTO.getDepartment().trim().isEmpty()) {
+            try {
+                branch = Branch.valueOf(createUserDTO.getDepartment().trim().toUpperCase());
+                log.info("Converted department '{}' to branch enum: {}", createUserDTO.getDepartment(), branch);
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid department/branch value: '{}'. Must be one of: {}", 
+                         createUserDTO.getDepartment(), java.util.Arrays.toString(Branch.values()));
+            }
+        }
+        
         User user = User.builder()
                 .name(createUserDTO.getName())
-                .email(email)  // Use trimmed/lowercase email
+                .email(email)
                 .phone(createUserDTO.getPhone())
-                .username(username)  // Use trimmed username
+                .username(username)
                 .password(passwordEncoder.encode(generatedPassword))
+                .employeeId(createUserDTO.getEmployeeId())
                 .role(createUserDTO.getRole())
+                .branch(branch)  // Use the safely converted branch value
                 .isFirstLogin(true)
                 .isActive(createUserDTO.getIsActive() != null ? createUserDTO.getIsActive() : true)
                 .build();
-
-        // Set branch if department is provided (for faculty)
-        if (createUserDTO.getDepartment() != null && !createUserDTO.getDepartment().trim().isEmpty()) {
-            try {
-                user.setBranch(Branch.valueOf(createUserDTO.getDepartment().trim().toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                log.warn("Invalid department/branch: {}", createUserDTO.getDepartment());
-                // Continue without setting branch
-            }
-        }
+        
+        log.info("Created user with branch: {}", user.getBranch());
 
         log.info("About to save user: {}", user.getUsername());
 
@@ -261,6 +267,7 @@ public class UserServiceImpl implements UserService {
                 .department(user.getBranch() != null ? user.getBranch().name() : null)
                 .role(user.getRole())
                 .isFirstLogin(user.isFirstLogin())
+                .employeeId(user.getEmployeeId())
                 .isActive(user.isActive())
                 .build();
     }

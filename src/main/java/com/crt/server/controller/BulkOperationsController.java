@@ -26,7 +26,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/bulk")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('ADMIN')")
+@PreAuthorize("hasAuthority('ADMIN')")
 public class BulkOperationsController {
 
 
@@ -51,7 +51,7 @@ public class BulkOperationsController {
             List<StudentDTO> uploadedStudents = studentService.bulkCreateStudents(file);
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body(uploadedStudents);
+                    .body("Processed " + uploadedStudents.size() + " students");
         } catch (Exception e) {
             log.error("Error in bulk student upload: {}", e.getMessage());
             ErrorResponse error = ErrorResponse.builder()
@@ -74,7 +74,7 @@ public class BulkOperationsController {
             List<RoomDTO> createdRooms = roomService.bulkCreateRoomsFromSimpleFormat(file);
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body(createdRooms);
+                    .body("Processed " + createdRooms.size() + " rooms");
         } catch (Exception e) {
             log.error("Error in bulk room creation from simple format: {}", e.getMessage());
             ErrorResponse error = ErrorResponse.builder()
@@ -96,7 +96,7 @@ public class BulkOperationsController {
             List<TrainingDTO> uploadedTrainings = TrainingService.bulkCreateTrainings(file);
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body(uploadedTrainings);
+                    .body("Processed " + uploadedTrainings.size() + " Trainings");
         } catch (Exception e) {
             log.error("Error in bulk Training upload: {}", e.getMessage());
             ErrorResponse error = ErrorResponse.builder()
@@ -118,7 +118,7 @@ public class BulkOperationsController {
             List<SectionDTO> uploadedSections = sectionService.bulkCreateSections(file);
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body(uploadedSections);
+                    .body("Processed " + uploadedSections.size() + " sections");
         } catch (Exception e) {
             log.error("Error in bulk Training upload: {}", e.getMessage());
             ErrorResponse error = ErrorResponse.builder()
@@ -139,9 +139,14 @@ public class BulkOperationsController {
 
         try {
             List<SectionDTO> sections = sectionService.bulkRegisterStudentsToSections(file);
+            StringBuilder res = new StringBuilder();
+            for (SectionDTO section : sections) {
+                res.append(section.getName()).append(" : ").append(section.getStudents().size());
+                res.append("\n");
+            }
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(sections);
+                    .body("Registration info: " + res);
         } catch (Exception e) {
             log.error("Error in bulk student registration: {}", e.getMessage());
             ErrorResponse error = ErrorResponse.builder()
@@ -157,47 +162,45 @@ public class BulkOperationsController {
         }
     }
 
-    @PostMapping("/attendance/mark")
-    @PreAuthorize("hasAuthority('FACULTY')")
-    public ResponseEntity<BulkAttendanceResponseDTO> markBulkAttendance(
-            @RequestBody BulkAttendanceDTO bulkAttendanceDTO) {
+//    @PostMapping("/attendance/mark")
+//    @PreAuthorize("hasAuthority('FACULTY')")
+//    public ResponseEntity<BulkAttendanceResponseDTO> markBulkAttendance(
+//            @RequestBody BulkAttendanceDTO bulkAttendanceDTO) {
+//
+//        BulkAttendanceDTO safeBulkAttendanceDTO = createSafeBulkAttendanceDTO(bulkAttendanceDTO);
+//        BulkAttendanceResponseDTO res = attendanceService.markBulkAttendance(safeBulkAttendanceDTO)
+//        return ResponseEntity.ok(res);
+//    }
 
-        // FIX: Create defensive copies of input collections to prevent ConcurrentModificationException
-        BulkAttendanceDTO safeBulkAttendanceDTO = createSafeBulkAttendanceDTO(bulkAttendanceDTO);
-
-        return ResponseEntity.ok(attendanceService.markBulkAttendance(safeBulkAttendanceDTO));
-    }
-
-    @PostMapping("/attendance/upload")
-    @PreAuthorize("hasAuthority('FACULTY')")
-    public ResponseEntity<BulkAttendanceResponseDTO> uploadBulkAttendance(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("timeSlotId") Integer timeSlotId,
-            @RequestParam("dateTime") String dateTime) {
-        return ResponseEntity.ok(attendanceService.processBulkAttendanceFile(file, timeSlotId, dateTime));
-    }
+//    @PostMapping("/attendance/upload")
+//    @PreAuthorize("hasAuthority('FACULTY')")
+//    public ResponseEntity<BulkAttendanceResponseDTO> uploadBulkAttendance(
+//            @RequestParam("file") MultipartFile file,
+//            @RequestParam("timeSlotId") Integer timeSlotId,
+//            @RequestParam("dateTime") String dateTime) {
+//        return ResponseEntity.ok(attendanceService.processBulkAttendanceFile(file, timeSlotId, dateTime));
+//    }
 
     /**
-     * Creates a safe copy of BulkAttendanceDTO with defensive copies of all collections
      */
-    private BulkAttendanceDTO createSafeBulkAttendanceDTO(BulkAttendanceDTO original) {
-        if (original == null) {
-            return null;
-        }
-
-        BulkAttendanceDTO safe = new BulkAttendanceDTO();
-        safe.setTimeSlotId(original.getTimeSlotId());
-        safe.setDateTime(original.getDateTime());
-
-        // Create defensive copies of collections
-        if (original.getAbsentStudentIds() != null) {
-            safe.setAbsentStudentIds(CollectionUtils.defensiveCopy(original.getAbsentStudentIds()));
-        }
-
-        if (original.getLateStudents() != null) {
-            safe.setLateStudents(CollectionUtils.defensiveCopy(original.getLateStudents()));
-        }
-
-        return safe;
-    }
+//    private BulkAttendanceDTO createSafeBulkAttendanceDTO(BulkAttendanceDTO original) {
+//        if (original == null) {
+//            return null;
+//        }
+//
+//        BulkAttendanceDTO safe = new BulkAttendanceDTO();
+//        safe.setTimeSlotId(original.getTimeSlotId());
+//        safe.setDateTime(original.getDateTime());
+//
+//        // Create defensive copies of collections
+//        if (original.getAbsentStudentIds() != null) {
+//            safe.setAbsentStudentIds(CollectionUtils.defensiveCopy(original.getAbsentStudentIds()));
+//        }
+//
+//        if (original.getLateStudents() != null) {
+//            safe.setLateStudents(CollectionUtils.defensiveCopy(original.getLateStudents()));
+//        }
+//
+//        return safe;
+//    }
 }
