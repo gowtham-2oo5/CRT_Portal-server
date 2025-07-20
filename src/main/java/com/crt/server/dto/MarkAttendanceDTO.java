@@ -20,6 +20,7 @@ public class MarkAttendanceDTO {
     private String dateTime;
     private List<UUID> absentStudentIds;
     private List<StudentAttendanceDTO> lateStudents;
+    private Boolean isAdminRequest;
 
     public LocalDateTime getParsedDateTime() {
         return DateTimeUtil.parseDateTime(dateTime);

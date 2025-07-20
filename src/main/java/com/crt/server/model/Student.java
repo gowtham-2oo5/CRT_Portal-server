@@ -7,7 +7,14 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "students")
+@Table(name = "students",
+        indexes = {
+                @Index(name = "idx_students_branch", columnList = "branch"),
+                @Index(name = "idx_students_batch", columnList = "batch"),
+                @Index(name = "idx_students_regNum", columnList = "regNum"),
+                @Index(name = "idx_students_section", columnList = "section_id"),
+                @Index(name = "idx_students_section_active", columnList = "section_id, isActive")
+        })
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -41,12 +48,21 @@ public class Student {
     @Column(nullable = false)
     @Builder.Default
     private Boolean crtEligibility = true;
+    
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
 
     @Column(length = 500)
     private String feedback;
+    
+    @Column(nullable = false)
+    @Builder.Default
+    private Double attendancePercentage = 0.0;
 
-    @ManyToMany(mappedBy = "students")
-    private Set<Section> sections;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "section_id", nullable = true)
+    private Section section;
 
     @Override
     public boolean equals(Object o) {

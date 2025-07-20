@@ -10,6 +10,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Slf4j
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -44,6 +46,33 @@ public class EmailServiceImpl implements EmailService {
     public void sendStudentAccountConfirmationMail(String email, AccountConfirmationMailDTO student) {
         sendEmail(email, "Welcome to Course Registration Portal", buildStudentConfirmationEmailContent(student),
                 "student confirmation email");
+    }
+    
+    @Override
+    public int sendBulkEmail(String subject, String body, List<String> emailIds) {
+        log.info("Sending bulk email to {} recipients", emailIds.size());
+        int successCount = 0;
+        
+        for (String email : emailIds) {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+                
+                helper.setTo(email);
+                helper.setSubject(subject);
+                helper.setText(body, true); // true indicates HTML content
+                
+                mailSender.send(message);
+                successCount++;
+                log.info("Bulk email sent to: {}", email);
+            } catch (Exception e) {
+                log.error("Failed to send bulk email to {}: {}", email, e.getMessage());
+                // Continue with the next email even if one fails
+            }
+        }
+        
+        log.info("Bulk email sending completed. Success: {}/{}", successCount, emailIds.size());
+        return successCount;
     }
 
     private void sendEmail(String to, String subject, String content, String emailType) {

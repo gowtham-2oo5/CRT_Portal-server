@@ -1,7 +1,8 @@
 package com.crt.server.controller;
 
-import com.crt.server.dto.StudentDTO;
+import com.crt.server.dto.*;
 import com.crt.server.exception.ErrorResponse;
+import com.crt.server.service.EmailService;
 import com.crt.server.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ public class StudentController {
 
     @Autowired
     private StudentService studentService;
+    
+    @Autowired
+    private EmailService emailService;
 
     @PostMapping
     public ResponseEntity<?> createStudent(@RequestBody StudentDTO studentDTO) {
@@ -61,6 +65,15 @@ public class StudentController {
     @GetMapping
     public ResponseEntity<List<StudentDTO>> getAllStudents() {
         return ResponseEntity.ok(studentService.getAllStudents());
+    }
+    
+    @GetMapping("/paginated")
+    public ResponseEntity<PagedResponseDTO<StudentDTO>> getStudentsPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "regNum") String sortBy,
+            @RequestParam(defaultValue = "ASC") String direction) {
+        return ResponseEntity.ok(studentService.getStudentsPaginated(page, size, sortBy, direction));
     }
 
     @PutMapping("/{id}")
@@ -130,5 +143,34 @@ public class StudentController {
                     .status(HttpStatus.NOT_FOUND)
                     .body(error);
         }
+    }
+    
+    @GetMapping("/with-attendance")
+    public ResponseEntity<List<StudentAttendanceDTO>> getStudentsWithAttendance(
+            @RequestParam(defaultValue = "30") int days) {
+        return ResponseEntity.ok(studentService.getStudentsWithAttendance(days));
+    }
+    
+    @GetMapping("/with-attendance/paginated")
+    public ResponseEntity<PagedResponseDTO<StudentAttendanceDTO>> getStudentsWithAttendancePaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "ASC") String direction,
+            @RequestParam(defaultValue = "30") int days) {
+        return ResponseEntity.ok(studentService.getStudentsWithAttendancePaginated(page, size, sortBy, direction, days));
+    }
+    
+    @PostMapping("/send-mail-in-bulk")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<BulkEmailResponseDTO> sendMailInBulk(@RequestBody BulkEmailRequestDTO request) {
+        int sentCount = emailService.sendBulkEmail(request.getSubject(), request.getBody(), request.getEmailIds());
+        
+        BulkEmailResponseDTO response = BulkEmailResponseDTO.builder()
+                .message("Mail has been sent to " + sentCount + " students.")
+                .content(request.getBody())
+                .build();
+        
+        return ResponseEntity.ok(response);
     }
 }

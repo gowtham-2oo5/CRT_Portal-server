@@ -22,6 +22,7 @@ public class StudentDTO {
     private String batch;
     private Boolean crtEligibility;
     private String feedback;
+
     private double attendancePercentage;
 
 }

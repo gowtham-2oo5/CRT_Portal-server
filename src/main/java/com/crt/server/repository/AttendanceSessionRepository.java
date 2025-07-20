@@ -3,6 +3,7 @@ package com.crt.server.repository;
 import com.crt.server.model.AttendanceSession;
 import com.crt.server.model.User;
 import com.crt.server.model.Section;
+import com.crt.server.model.TimeSlot;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -37,8 +38,17 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
     Long countWeeklyAttendanceByFaculty(@Param("faculty") User faculty, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
     
     // Check if attendance already submitted for a specific time slot and date
-    boolean existsByFacultyAndTimeSlotAndDate(User faculty, com.crt.server.model.TimeSlot timeSlot, LocalDate date);
+    boolean existsByFacultyAndTimeSlotAndDate(User faculty, TimeSlot timeSlot, LocalDate date);
     
     // Find specific attendance session
-    Optional<AttendanceSession> findByFacultyAndTimeSlotAndDate(User faculty, com.crt.server.model.TimeSlot timeSlot, LocalDate date);
+    Optional<AttendanceSession> findByFacultyAndTimeSlotAndDate(User faculty, TimeSlot timeSlot, LocalDate date);
+    
+    /**
+     * Find attendance session by time slot and date
+     * 
+     * @param timeSlot The time slot
+     * @param date The date
+     * @return Optional attendance session
+     */
+    Optional<AttendanceSession> findByTimeSlotAndDate(TimeSlot timeSlot, LocalDate date);
 }

@@ -36,7 +36,7 @@ public class SectionController {
 
     @GetMapping("/{sectionId}")
     public ResponseEntity<SectionDTO> getSection(@PathVariable UUID sectionId) {
-        return ResponseEntity.ok(sectionService.getSection(sectionId));
+        return ResponseEntity.ok(sectionService.getSectionById(sectionId));
     }
 
     @GetMapping

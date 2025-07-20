@@ -16,14 +16,13 @@ import com.crt.server.service.TrainingService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,7 +33,7 @@ public class SectionServiceImpl implements SectionService {
     private SectionRepository sectionRepository;
 
     @Autowired
-    private TrainingRepository TrainingRepository;
+    private TrainingRepository trainingRepository;
 
     @Autowired
     private TrainingService trainingService;
@@ -47,25 +46,33 @@ public class SectionServiceImpl implements SectionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"sectionDetails", "studentsBySection"}, allEntries = true)
     public SectionDTO createSection(CreateSectionDTO createSectionDTO) {
-        log.info("Creating section: {}", createSectionDTO);
-        Training training = TrainingRepository.findById(UUID.fromString(createSectionDTO.getTrainingId()))
+        log.debug("Creating section with DTO: {}", createSectionDTO);
+
+        Training training = trainingRepository.findById(UUID.fromString(createSectionDTO.getTrainingId()))
                 .orElseThrow(() -> new RuntimeException("Training not found"));
 
-        Section section = new Section();
-        section.setName(training.getSn() + " " + createSectionDTO.getSectionName());
-        section.setTraining(training);
-        section.setStrength(0);
-        section.setCapacity(30);
+        Section section = Section.builder()
+                .name(createSectionDTO.getSectionName())
+                .training(training)
+                .strength(0) // Default value
+                .capacity(30) // Default value
+                .build();
 
         Section savedSection = sectionRepository.save(section);
         return mapToDTO(savedSection);
     }
 
-    @Override
     @Transactional(readOnly = true)
     public SectionDTO getSection(UUID sectionId) {
-        Section section = sectionRepository.findById(sectionId)
+        return getSectionById(sectionId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SectionDTO getSectionById(UUID id) {
+        Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Section not found"));
         return mapToDTO(section);
     }
@@ -73,6 +80,7 @@ public class SectionServiceImpl implements SectionService {
     @Override
     @Transactional(readOnly = true)
     public List<SectionDTO> getAllSections() {
+        log.debug("Getting all sections");
         return sectionRepository.findAll().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
@@ -80,15 +88,19 @@ public class SectionServiceImpl implements SectionService {
 
     @Override
     @Transactional
-    public SectionDTO updateSection(UUID sectionId, CreateSectionDTO updateSectionDTO) {
-        Section section = sectionRepository.findById(sectionId)
+    @CacheEvict(value = {"sectionDetails", "studentsBySection"}, allEntries = true)
+    public SectionDTO updateSection(UUID id, CreateSectionDTO updateSectionDTO) {
+        log.debug("Updating section with ID: {} and DTO: {}", id, updateSectionDTO);
+
+        Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Section not found"));
 
-        Training training = TrainingRepository.findById(UUID.fromString(updateSectionDTO.getTrainingId()))
+        Training training = trainingRepository.findById(UUID.fromString(updateSectionDTO.getTrainingId()))
                 .orElseThrow(() -> new RuntimeException("Training not found"));
 
-        section.setName(training.getSn() + " " + updateSectionDTO.getSectionName());
+        section.setName(updateSectionDTO.getSectionName());
         section.setTraining(training);
+        // Keep existing strength and capacity values
 
         Section updatedSection = sectionRepository.save(section);
         return mapToDTO(updatedSection);
@@ -96,136 +108,93 @@ public class SectionServiceImpl implements SectionService {
 
     @Override
     @Transactional
-    public void deleteSection(UUID sectionId) {
-        Section section = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new RuntimeException("Section not found"));
-        sectionRepository.delete(section);
+    @CacheEvict(value = {"sectionDetails", "studentsBySection"}, allEntries = true)
+    public void deleteSection(UUID id) {
+        log.debug("Deleting section with ID: {}", id);
+
+        if (!sectionRepository.existsById(id)) {
+            throw new RuntimeException("Section not found");
+        }
+        sectionRepository.deleteById(id);
     }
 
     @Override
     @Transactional
+    @CacheEvict(value = {"sectionDetails", "studentsBySection"}, allEntries = true)
     public SectionDTO registerStudents(UUID sectionId, List<String> regNums) {
+        log.debug("Registering students with reg numbers {} to section {}", regNums, sectionId);
+
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new RuntimeException("Section not found"));
+
         List<Student> students = studentRepository.findByRegNumIn(regNums);
 
-        section.getStudents().addAll(students);
+        if (students.size() != regNums.size()) {
+            List<String> foundRegNums = students.stream()
+                    .map(Student::getRegNum)
+                    .collect(Collectors.toList());
+
+            List<String> notFoundRegNums = regNums.stream()
+                    .filter(regNum -> !foundRegNums.contains(regNum))
+                    .collect(Collectors.toList());
+
+            throw new RuntimeException("Some students not found: " + String.join(", ", notFoundRegNums));
+        }
+
+        // Update each student's section
+        for (Student student : students) {
+            student.setSection(section);
+            studentRepository.save(student);
+        }
+
+        // Update section strength
         section.setStrength(section.getStudents().size());
-        Section updatedSection = sectionRepository.save(section);
-        return mapToDTO(updatedSection);
+        sectionRepository.save(section);
+
+        return mapToDTO(section);
     }
 
     @Override
+    @Transactional
+    @CacheEvict(value = {"sectionDetails", "studentsBySection"}, allEntries = true)
     public SectionDTO registerStudent(UUID sectionId, String regNum) {
+        log.debug("Registering student with reg number {} to section {}", regNum, sectionId);
+
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new RuntimeException("Section not found"));
+
         Student student = studentRepository.findByRegNum(regNum);
+        if (student == null) {
+            throw new RuntimeException("Student not found with registration number: " + regNum);
+        }
 
-        section.getStudents().add(student);
+        student.setSection(section);
+        studentRepository.save(student);
+
+        // Update section strength
         section.setStrength(section.getStudents().size());
-        Section updatedSection = sectionRepository.save(section);
-        return mapToDTO(updatedSection);
+        sectionRepository.save(section);
+
+        return mapToDTO(section);
     }
 
-    @Override
-    public List<SectionDTO> bulkRegisterStudentsToSections(MultipartFile file) throws Exception {
-        String[] headers = {"SECTION", "STUDENTS"};
-        try {
-
-            List<CSVRecord> records = csvService.parseCsv(file, headers);
-            List<SectionDTO> updatedSections = new ArrayList<>();
-
-            for (CSVRecord record : records) {
-                validateStudentRegistrationFields(record);
-
-                String sectionName = record.get("SECTION");
-                String studentsString = record.get("STUDENTS");
-
-                Section section = sectionRepository.findByName(sectionName);
-                if (section == null) {
-                    throw new RuntimeException("Section not found: " + sectionName);
-                }
-
-                List<String> regNums = parseStudentsList(studentsString);
-                if (!regNums.isEmpty()) {
-                    SectionDTO sectionDTO = registerStudents(section.getId(), regNums);
-                    updatedSections.add(sectionDTO);
-                }
-            }
-
-            log.info("Updated {} sections", updatedSections.size());
-            return updatedSections;
-
-        } catch (Exception e) {
-            log.error("Error in bulk Student registration: {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void validateStudentRegistrationFields(CSVRecord record) {
-        String[] requiredFields = {"SECTION", "STUDENTS"};
-        for (String field : requiredFields) {
-            if (!record.isSet(field) || record.get(field).trim().isEmpty()) {
-                throw new IllegalArgumentException("Required field '" + field + "' is missing or empty");
-            }
-        }
-    }
-
-    private List<String> parseStudentsList(String studentsString) {
-        String cleanString = studentsString.replaceAll("[\\[\\]]", "").trim();
-        if (cleanString.isEmpty()) {
-            return List.of();
-        }
-        return Arrays.stream(cleanString.split(";"))
-                .map(String::trim)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     @Transactional(readOnly = true)
-    public List<SectionDTO> getSectionsByTraining(UUID trainingId) {
-        Training training = TrainingRepository.findById(trainingId)
-                .orElse(null);
-        if (training == null) {
-            return null;
-        }
-        List<Section> sections = sectionRepository.findByTraining(training);
-        return sections.stream()
-                .map(this::mapToDTO)
+    @Cacheable(value = "studentsBySection", key = "#sectionId")
+    @Override
+    public List<StudentDTO> getStudentsBySection(UUID sectionId) {
+        log.debug("Cache miss: Getting students for section: {}", sectionId);
+
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Section not found"));
+
+        return section.getStudents().stream()
+                .map(this::mapStudentToDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public SectionDTO updateStudentSection(UUID studentId, UUID sectionId) {
-        // Get student
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Student not found"));
-
-        // Get current section using a separate query
-        Section currentSection = sectionRepository.findByStudentsContaining(student)
-                .stream()
-                .findFirst()
-                .orElse(null);
-
-        // Remove from current section if exists
-        if (currentSection != null) {
-            currentSection.getStudents().remove(student);
-            currentSection.setStrength(currentSection.getStudents().size());
-            sectionRepository.save(currentSection);
-        }
-
-        // Add to new section
-        Section newSection = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new RuntimeException("Section not found"));
-        newSection.getStudents().add(student);
-        newSection.setStrength(newSection.getStudents().size());
-        Section updatedSection = sectionRepository.save(newSection);
-
-        return mapToDTO(updatedSection);
-    }
-
-    @Override
+    @CacheEvict(value = {"sectionDetails", "studentsBySection"}, allEntries = true)
     public List<SectionDTO> bulkCreateSections(MultipartFile file) throws Exception {
         String[] headers = {"TRAINING", "SECTIONS"};
 
@@ -308,35 +277,180 @@ public class SectionServiceImpl implements SectionService {
         }
     }
 
-    private SectionDTO mapToDTO(Section section) {
-        SectionDTO dto = new SectionDTO();
-        dto.setId(section.getId());
-        dto.setName(section.getName());
-        dto.setTraining(mapTrainingToDTO(section.getTraining()));
-        dto.setStudents(section.getStudents().stream()
-                .map(this::mapStudentToDTO)
-                .collect(Collectors.toSet()));
-        dto.setStrength(section.getStrength());
-        return dto;
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"sectionDetails", "studentsBySection"}, allEntries = true)
+    public List<SectionDTO> bulkRegisterStudentsToSections(MultipartFile file) throws Exception {
+        String[] headers = {"SECTION", "STUDENTS"};
+        try {
+            List<CSVRecord> records = csvService.parseCsv(file, headers);
+            List<SectionDTO> updatedSections = new ArrayList<>();
+
+            // Process records sequentially to avoid LazyInitializationException
+            for (CSVRecord record : records) {
+                try {
+                    validateStudentRegistrationFields(record);
+
+                    String sectionName = record.get("SECTION");
+                    String studentsString = record.get("STUDENTS");
+
+                    // Use findByName inside the transaction context
+                    Section section = sectionRepository.findByName(sectionName);
+                    if (section == null) {
+                        throw new RuntimeException("Section not found: " + sectionName);
+                    }
+
+                    List<String> regNums = parseStudentsList(studentsString);
+                    if (!regNums.isEmpty()) {
+                        // This method already has @Transactional
+                        SectionDTO sectionDTO = registerStudents(section.getId(), regNums);
+                        updatedSections.add(sectionDTO);
+                    }
+                } catch (Exception e) {
+                    log.error("Error processing record for section {}: {}", 
+                            record.get("SECTION"), e.getMessage());
+                    // We don't rethrow here to allow other records to be processed
+                }
+            }
+
+            log.info("Updated {} sections", updatedSections.size());
+            return updatedSections;
+
+        } catch (Exception e) {
+            log.error("Error in bulk Student registration: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+    
+    private void validateStudentRegistrationFields(CSVRecord record) {
+        String[] requiredFields = {"SECTION", "STUDENTS"};
+        for (String field : requiredFields) {
+            if (!record.isSet(field) || record.get(field).trim().isEmpty()) {
+                throw new IllegalArgumentException("Required field '" + field + "' is missing or empty");
+            }
+        }
     }
 
-    private TrainingDTO mapTrainingToDTO(Training training) {
-        TrainingDTO dto = new TrainingDTO();
-        dto.setId(training.getId());
-        dto.setName(training.getName());
-        return dto;
+    private List<String> parseStudentsList(String studentsString) {
+        String cleanString = studentsString.replaceAll("[\\[\\]]", "").trim();
+        if (cleanString.isEmpty()) {
+            return List.of();
+        }
+        return Arrays.stream(cleanString.split(";"))
+                .map(String::trim)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SectionDTO> getSectionsByTraining(UUID trainingId) {
+        log.debug("Getting sections by training ID: {}", trainingId);
+
+        Training training = trainingRepository.findById(trainingId)
+                .orElseThrow(() -> new RuntimeException("Training not found"));
+
+        return sectionRepository.findByTraining(training).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"sectionDetails", "studentsBySection"}, allEntries = true)
+    public SectionDTO updateStudentSection(UUID studentId, UUID sectionId) {
+        log.debug("Updating section for student {} to section {}", studentId, sectionId);
+
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Section not found"));
+
+        // If student already has a section, update that section's strength
+        if (student.getSection() != null) {
+            Section oldSection = student.getSection();
+            student.setSection(null);
+            studentRepository.save(student);
+            
+            // Update old section's strength
+            oldSection.setStrength(oldSection.getStudents().size());
+            sectionRepository.save(oldSection);
+        }
+
+        student.setSection(section);
+        studentRepository.save(student);
+
+        // Update new section's strength
+        section.setStrength(section.getStudents().size());
+        sectionRepository.save(section);
+
+        return mapToDTO(section);
+    }
+
+    private void validateSectionRecord(CSVRecord record) throws Exception {
+        String[] requiredFields = {"NAME", "TRAINING_ID"};
+        for (String field : requiredFields) {
+            if (!record.isSet(field) || record.get(field).trim().isEmpty()) {
+                throw new Exception("Required field '" + field + "' is missing or empty");
+            }
+        }
+
+        try {
+            UUID.fromString(record.get("TRAINING_ID"));
+        } catch (IllegalArgumentException e) {
+            throw new Exception("TRAINING_ID must be a valid UUID");
+        }
+    }
+
+    private void validateRegistrationRecord(CSVRecord record) throws Exception {
+        String[] requiredFields = {"STUDENT_ID", "SECTION_ID"};
+        for (String field : requiredFields) {
+            if (!record.isSet(field) || record.get(field).trim().isEmpty()) {
+                throw new Exception("Required field '" + field + "' is missing or empty");
+            }
+        }
+
+        try {
+            UUID.fromString(record.get("STUDENT_ID"));
+        } catch (IllegalArgumentException e) {
+            throw new Exception("STUDENT_ID must be a valid UUID");
+        }
+
+        try {
+            UUID.fromString(record.get("SECTION_ID"));
+        } catch (IllegalArgumentException e) {
+            throw new Exception("SECTION_ID must be a valid UUID");
+        }
+    }
+
+    private SectionDTO mapToDTO(Section section) {
+        TrainingDTO trainingDTO = trainingService.getTrainingById(section.getTraining().getId());
+
+        return SectionDTO.builder()
+                .id(section.getId())
+                .name(section.getName())
+                .training(trainingDTO)
+                .students(section.getStudents() != null ? section.getStudents().stream()
+                        .map(this::mapStudentToDTO)
+                        .collect(Collectors.toSet()) : null)
+                .strength(section.getStrength())
+                .capacity(section.getCapacity())
+                .build();
     }
 
     private StudentDTO mapStudentToDTO(Student student) {
-        StudentDTO dto = new StudentDTO();
-        dto.setId(student.getId().toString());
-        dto.setRegNum(student.getRegNum());
-        dto.setName(student.getName());
-        dto.setEmail(student.getEmail());
-        dto.setPhone(student.getPhone());
-        dto.setCrtEligibility(student.getCrtEligibility());
-        dto.setDepartment(student.getBranch().name());
-        dto.setBatch(student.getBatch());
-        return dto;
+        return StudentDTO.builder()
+                .id(student.getId().toString())
+                .name(student.getName())
+                .email(student.getEmail())
+                .phone(student.getPhone())
+                .regNum(student.getRegNum())
+                .rollNumber(student.getRegNum()) // Ensure rollNumber is also set
+                .department(student.getBranch().toString())
+                .batch(student.getBatch())
+                .section(student.getSection() != null ? student.getSection().getName() : null)
+                .crtEligibility(student.getCrtEligibility())
+                .build();
     }
 }

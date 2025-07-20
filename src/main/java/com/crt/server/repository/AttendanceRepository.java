@@ -1,14 +1,18 @@
 package com.crt.server.repository;
 
+import com.crt.server.dto.AbsenteeDTO;
 import com.crt.server.model.Attendance;
+import com.crt.server.model.AttendanceSession;
 import com.crt.server.model.Student;
-import com.crt.server.model.AttendanceStatus;import com.crt.server.model.TimeSlot;
+import com.crt.server.model.AttendanceStatus;
+import com.crt.server.model.TimeSlot;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -79,4 +83,44 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
     List<Object[]> findSectionAttendanceRecords(@Param("sectionId") UUID sectionId, 
                                                @Param("startDate") LocalDateTime startDate, 
                                                @Param("endDate") LocalDateTime endDate);
+                                               
+    // Methods for fetching absentees
+    @Query("SELECT a FROM Attendance a WHERE a.status = 'ABSENT' AND CAST(a.date AS LocalDate) = :date")
+    List<Attendance> findAbsenteesByDate(@Param("date") LocalDate date);
+    
+    @Query("SELECT a FROM Attendance a WHERE a.status = 'ABSENT' AND CAST(a.date AS LocalDate) = :date AND a.timeSlot.section.id = :sectionId")
+    List<Attendance> findAbsenteesByDateAndSection(@Param("date") LocalDate date, @Param("sectionId") UUID sectionId);
+    
+    List<Attendance> findByStatusAndTimeSlotAndDate(AttendanceStatus status, TimeSlot timeSlot, LocalDateTime date);
+    
+    /**
+     * Check if attendance has been posted for a time slot on a specific date
+     * 
+     * @param timeSlot The time slot
+     * @param date The date
+     * @return True if attendance has been posted, false otherwise
+     */
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM Attendance a WHERE a.timeSlot = :timeSlot AND CAST(a.date AS LocalDate) = :date")
+    boolean existsByTimeSlotAndDate(@Param("timeSlot") TimeSlot timeSlot, @Param("date") LocalDate date);
+    
+    /**
+     * Find faculties who haven't posted attendance for their time slots on a specific date
+     * 
+     * @param date The date
+     * @return List of faculty IDs who haven't posted attendance
+     */
+    @Query("SELECT DISTINCT ts.inchargeFaculty.id FROM TimeSlot ts WHERE ts.id NOT IN " +
+           "(SELECT a.timeSlot.id FROM Attendance a WHERE CAST(a.date AS LocalDate) = :date)")
+    List<UUID> findFacultiesWithPendingAttendance(@Param("date") LocalDate date);
+    
+    /**
+     * Find attendance records by attendance session
+     * 
+     * @param attendanceSession The attendance session
+     * @return List of attendance records
+     */
+    List<Attendance> findByAttendanceSession(AttendanceSession attendanceSession);
+
+    @Query("SELECT a FROM Attendance a WHERE a.status = 'ABSENT' AND a.timeSlot IN :timeSlot")
+    List<Attendance> getAbsenteesByTimeSlot(TimeSlot timeSlot);
 }

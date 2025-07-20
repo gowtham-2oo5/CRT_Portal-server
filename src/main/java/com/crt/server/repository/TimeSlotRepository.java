@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -51,6 +52,11 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, Integer> {
     boolean existsByIdAndScheduleId(
             @Param("timeSlotId") Integer timeSlotId,
             @Param("scheduleId") UUID scheduleId);
-
-
+            
+    /**
+     * Find time slots for a faculty where the end time is before the specified time
+     * This is used to find time slots that have already passed for the day
+     */
+//    @Query("SELECT ts FROM TimeSlot ts WHERE ts.inchargeFaculty = :faculty")
+//    List<TimeSlot> findByInchargeFaculty(@Param("faculty") User faculty);
 }

@@ -1,6 +1,7 @@
 package com.crt.server.service.impl;
 
 import com.crt.server.dto.AuthResponseDTO;
+import com.crt.server.dto.PagedResponseDTO;
 import com.crt.server.dto.UserDTO;
 import com.crt.server.exception.ResourceNotFoundException;
 import com.crt.server.model.Branch;
@@ -13,6 +14,10 @@ import com.crt.server.util.PasswordGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,18 +75,6 @@ public class UserServiceImpl implements UserService {
 
         String generatedPassword = PasswordGenerator.generatePassword();
         log.info("Generated password for user: {}", username);
-
-        Branch branch = null;
-        log.info("Attempting to convert department '{}' to branch enum '{}'", createUserDTO.getDepartment(),Branch.valueOf(createUserDTO.getDepartment()) );
-        if (createUserDTO.getDepartment() != null && !createUserDTO.getDepartment().trim().isEmpty()) {
-            try {
-                branch = Branch.valueOf(createUserDTO.getDepartment().trim().toUpperCase());
-                log.info("Converted department '{}' to branch enum: {}", createUserDTO.getDepartment(), branch);
-            } catch (IllegalArgumentException e) {
-                log.warn("Invalid department/branch value: '{}'. Must be one of: {}", 
-                         createUserDTO.getDepartment(), java.util.Arrays.toString(Branch.values()));
-            }
-        }
         
         User user = User.builder()
                 .name(createUserDTO.getName())
@@ -91,12 +84,12 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(generatedPassword))
                 .employeeId(createUserDTO.getEmployeeId())
                 .role(createUserDTO.getRole())
-                .branch(branch)  // Use the safely converted branch value
+                .department(createUserDTO.getDepartment())
                 .isFirstLogin(true)
                 .isActive(createUserDTO.getIsActive() != null ? createUserDTO.getIsActive() : true)
                 .build();
         
-        log.info("Created user with branch: {}", user.getBranch());
+        log.info("Created user with branch: {}", user.getDepartment());
 
         log.info("About to save user: {}", user.getUsername());
 
@@ -155,6 +148,29 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+    
+    @Override
+    public PagedResponseDTO<UserDTO> getUsersPaginated(int page, int size, String sortBy, String direction) {
+        Sort sort = Sort.by(Sort.Direction.fromString(direction), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<User> userPage = userRepository.findAll(pageable);
+        List<UserDTO> userDTOs = userPage.getContent().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        
+        return PagedResponseDTO.<UserDTO>builder()
+                .content(userDTOs)
+                .page(userPage.getNumber())
+                .size(userPage.getSize())
+                .totalElements(userPage.getTotalElements())
+                .totalPages(userPage.getTotalPages())
+                .first(userPage.isFirst())
+                .last(userPage.isLast())
+                .hasNext(userPage.hasNext())
+                .hasPrevious(userPage.hasPrevious())
+                .build();
     }
 
     @Override
@@ -264,7 +280,7 @@ public class UserServiceImpl implements UserService {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .username(user.getUsername())
-                .department(user.getBranch() != null ? user.getBranch().name() : null)
+                .department(user.getDepartment() )
                 .role(user.getRole())
                 .isFirstLogin(user.isFirstLogin())
                 .employeeId(user.getEmployeeId())

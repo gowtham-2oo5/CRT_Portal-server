@@ -1,5 +1,6 @@
 package com.crt.server.controller;
 
+import com.crt.server.dto.PagedResponseDTO;
 import com.crt.server.dto.UserDTO;
 import com.crt.server.exception.ErrorResponse;
 import com.crt.server.service.UserService;
@@ -84,6 +85,31 @@ public class UserController {
                     .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
                     .message("Failed to retrieve users: " + e.getMessage())
                     .path("/api/users")
+                    .build();
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(error);
+        }
+    }
+    
+    @GetMapping("/paginated")
+    public ResponseEntity<?> getUsersPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "ASC") String direction) {
+        try {
+            PagedResponseDTO<UserDTO> response = userService.getUsersPaginated(page, size, sortBy, direction);
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(response);
+        } catch (Exception e) {
+            ErrorResponse error = ErrorResponse.builder()
+                    .timestamp(LocalDateTime.now())
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
+                    .message("Failed to retrieve paginated users: " + e.getMessage())
+                    .path("/api/users/paginated")
                     .build();
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)

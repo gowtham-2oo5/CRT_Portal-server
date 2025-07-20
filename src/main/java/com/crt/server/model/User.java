@@ -19,7 +19,12 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_users_role", columnList = "role"),
+    @Index(name = "idx_users_active", columnList = "isActive"),
+    @Index(name = "idx_users_role_active", columnList = "role, isActive"),
+    @Index(name = "idx_users_branch", columnList = "branch")
+})
 public class User implements UserDetails {
 
     @Id
@@ -52,10 +57,8 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean isActive = true;
 
-    // Faculty-specific fields
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Branch branch; // CSE, ME, CE, ECE, EEE
+    private String department; // CSE, ME, CE, ECE, EEE
 
     @Column(unique = true)
     private String employeeId; // Faculty employee ID

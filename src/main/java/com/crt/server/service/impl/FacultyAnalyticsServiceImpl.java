@@ -213,10 +213,12 @@ public class FacultyAnalyticsServiceImpl implements FacultyAnalyticsService {
     }
 
     private List<AttendanceAnalyticsDTO.SectionStatsDTO> calculateSectionStats(List<AttendanceSession> sessions) {
+        // Group sessions by section
         Map<String, List<AttendanceSession>> sessionsBySection = sessions.stream()
                 .collect(Collectors.groupingBy(session -> session.getSection().getId().toString()));
         
-        return sessionsBySection.entrySet().stream()
+        // Process each section in parallel
+        return sessionsBySection.entrySet().parallelStream()
                 .map(entry -> {
                     List<AttendanceSession> sectionSessions = entry.getValue();
                     AttendanceSession firstSession = sectionSessions.get(0);
@@ -243,7 +245,7 @@ public class FacultyAnalyticsServiceImpl implements FacultyAnalyticsService {
         Map<LocalDate, List<AttendanceSession>> sessionsByDate = sessions.stream()
                 .collect(Collectors.groupingBy(AttendanceSession::getDate));
         
-        return sessionsByDate.entrySet().stream()
+        return sessionsByDate.entrySet().parallelStream()
                 .sorted(Map.Entry.<LocalDate, List<AttendanceSession>>comparingByKey().reversed())
                 .limit(30) // Last 30 days
                 .map(entry -> {
@@ -293,7 +295,8 @@ public class FacultyAnalyticsServiceImpl implements FacultyAnalyticsService {
                 .flatMap(session -> session.getSection().getStudents().stream())
                 .collect(Collectors.toSet());
         
-        return allStudents.stream()
+        // Process student performance in parallel
+        return allStudents.parallelStream()
                 .map(student -> {
                     List<TimeSlot> relevantTimeSlots = sessions.stream()
                             .map(AttendanceSession::getTimeSlot)

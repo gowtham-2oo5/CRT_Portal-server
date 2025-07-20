@@ -55,10 +55,11 @@ public class FacultyReportServiceImpl implements FacultyReportService {
                 .map(AttendanceSession::getTimeSlot)
                 .collect(Collectors.toList());
         
-        // Get all students from these sessions and calculate their attendance
+        // Get all students from these sessions and calculate their attendance in parallel
         List<FacultyAttendanceReportDTO.StudentAttendanceReportDTO> studentReports = finalSessions.stream()
                 .flatMap(session -> session.getSection().getStudents().stream())
                 .distinct()
+                .parallel() // Use parallel stream for concurrent processing
                 .map(student -> {
                     // Calculate attendance for this student
                     long totalSessions = attendanceRepository.countByStudentAndTimeSlotIn(student, timeSlots);
@@ -155,8 +156,8 @@ public class FacultyReportServiceImpl implements FacultyReportService {
                 .findFirst()
                 .orElse(null);
         
-        // Build session history
-        List<StudentAttendanceDetailDTO.SessionHistoryDTO> sessionHistory = attendanceRecords.stream()
+        // Build session history in parallel
+        List<StudentAttendanceDetailDTO.SessionHistoryDTO> sessionHistory = attendanceRecords.parallelStream()
                 .map(record -> {
                     AttendanceSession session = record.getAttendanceSession();
                     return StudentAttendanceDetailDTO.SessionHistoryDTO.builder()

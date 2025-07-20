@@ -5,13 +5,12 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.crt.server.dto.RoomDTO;
-import com.crt.server.dto.SectionDTO;
 import com.crt.server.dto.TimeSlotDTO;
-import com.crt.server.dto.UserDTO;
 import com.crt.server.model.Room;
 import com.crt.server.model.Section;
 import com.crt.server.model.SectionSchedule;
@@ -25,8 +24,10 @@ import com.crt.server.repository.UserRepository;
 import com.crt.server.service.TimeSlotService;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class TimeSlotServiceImpl implements TimeSlotService {
 
     @Autowired
@@ -46,58 +47,115 @@ public class TimeSlotServiceImpl implements TimeSlotService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"facultyTimeSlots", "sectionDetails"}, allEntries = true)
     public TimeSlotDTO createTimeSlot(TimeSlotDTO timeSlotDTO) {
-        System.out.println("Creating time slot with DTO: " + timeSlotDTO);
+        log.debug("Creating time slot with DTO: {}", timeSlotDTO);
 
-        // Validate IDs exist
+        // Get section
         Section section = sectionRepository.findById(timeSlotDTO.getSectionId())
                 .orElseThrow(() -> new EntityNotFoundException("Section not found"));
-        System.out.println("Found section: " + section.getName());
 
-        User inchargeFaculty = userRepository.findById(timeSlotDTO.getInchargeFacultyId())
+        // Get faculty
+        User faculty = userRepository.findById(timeSlotDTO.getInchargeFacultyId())
                 .orElseThrow(() -> new EntityNotFoundException("Faculty not found"));
-        System.out.println("Found faculty: " + inchargeFaculty.getName());
 
+        // Get room
         Room room = roomRepository.findById(timeSlotDTO.getRoomId())
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
-        System.out.println("Found room: " + room.toString());
 
-        // Get or create schedule for the section
-        SectionSchedule schedule = sectionScheduleRepository.findBySectionId(timeSlotDTO.getSectionId())
-                .orElseGet(() -> {
-                    SectionSchedule newSchedule = new SectionSchedule();
-                    newSchedule.setSection(section);
-                    newSchedule.setRoom(room);
-                    return sectionScheduleRepository.save(newSchedule);
-                });
-        System.out.println("Found/created schedule: " + schedule.getId());
+        // Get schedule
+        SectionSchedule schedule = sectionScheduleRepository.findBySectionId(section.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Section schedule not found"));
 
+        // Create time slot
         TimeSlot timeSlot = new TimeSlot();
         timeSlot.setStartTime(timeSlotDTO.getStartTime());
         timeSlot.setEndTime(timeSlotDTO.getEndTime());
         timeSlot.setBreak(timeSlotDTO.getIsBreak());
         timeSlot.setBreakDescription(timeSlotDTO.getBreakDescription());
-        timeSlot.setInchargeFaculty(inchargeFaculty);
+        timeSlot.setInchargeFaculty(faculty);
         timeSlot.setSection(section);
         timeSlot.setRoom(room);
         timeSlot.setSchedule(schedule);
 
-        System.out.println("Created time slot with room: " + timeSlot.getRoom().getId());
-
         TimeSlot savedTimeSlot = timeSlotRepository.save(timeSlot);
-        System.out.println("Saved time slot with ID: " + savedTimeSlot.getId());
-
         return convertToDTO(savedTimeSlot);
     }
 
     @Override
     public TimeSlotDTO getTimeSlot(Integer id) {
+        return mapToDTO(timeSlotRepository.getReferenceById(id));
+    }
+
+    private TimeSlotDTO mapToDTO(TimeSlot timeSlot) {
+        return TimeSlotDTO.builder()
+                .startTime(timeSlot.getStartTime())
+                .endTime(timeSlot.getEndTime())
+                .inchargeFacultyName(timeSlot.getInchargeFaculty().getName())
+                .inchargeFacultyId(timeSlot.getInchargeFaculty().getId())
+                .sectionName(timeSlot.getSection().getName())
+                .sectionId(timeSlot.getSection().getId())
+                .roomId(timeSlot.getRoom().getId())
+                .roomName(timeSlot.getRoom().toString())
+                .isBreak(timeSlot.isBreak())
+                .breakDescription(timeSlot.getBreakDescription())
+                .id(timeSlot.getId())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"facultyTimeSlots", "sectionDetails"}, allEntries = true)
+    public TimeSlotDTO updateTimeSlot(Integer id, TimeSlotDTO timeSlotDTO) {
+        log.debug("Updating time slot with ID: {} and DTO: {}", id, timeSlotDTO);
+
+        TimeSlot timeSlot = timeSlotRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Time slot not found"));
+
+        // Get section
+        Section section = sectionRepository.findById(timeSlotDTO.getSectionId())
+                .orElseThrow(() -> new EntityNotFoundException("Section not found"));
+
+        // Get faculty
+        User faculty = userRepository.findById(timeSlotDTO.getInchargeFacultyId())
+                .orElseThrow(() -> new EntityNotFoundException("Faculty not found"));
+
+        // Get room
+        Room room = roomRepository.findById(timeSlotDTO.getRoomId())
+                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
+
+        // Update time slot
+        timeSlot.setStartTime(timeSlotDTO.getStartTime());
+        timeSlot.setEndTime(timeSlotDTO.getEndTime());
+        timeSlot.setBreak(timeSlotDTO.getIsBreak());
+        timeSlot.setBreakDescription(timeSlotDTO.getBreakDescription());
+        timeSlot.setInchargeFaculty(faculty);
+        timeSlot.setSection(section);
+        timeSlot.setRoom(room);
+
+        TimeSlot updatedTimeSlot = timeSlotRepository.save(timeSlot);
+        return convertToDTO(updatedTimeSlot);
+    }
+
+    @Transactional(readOnly = true)
+    @Cacheable(value = "facultyTimeSlots", key = "#faculty.id")
+    @Override
+    public List<TimeSlot> findByInchargeFaculty(User faculty) {
+        log.debug("Cache miss: Finding time slots for faculty: {}", faculty.getId());
+        return timeSlotRepository.findByInchargeFaculty(faculty);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public TimeSlotDTO getTimeSlotById(Integer id) {
+        log.debug("Getting time slot by ID: {}", id);
         TimeSlot timeSlot = timeSlotRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Time slot not found"));
         return convertToDTO(timeSlot);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TimeSlotDTO> getTimeSlotsBySection(UUID sectionId) {
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new EntityNotFoundException("Section not found"));
@@ -108,38 +166,14 @@ public class TimeSlotServiceImpl implements TimeSlotService {
 
     @Override
     public List<TimeSlotDTO> getTimeSlotsByFaculty(UUID facultyId) {
-        User faculty = userRepository.findById(facultyId)
-                .orElseThrow(() -> new EntityNotFoundException("Faculty not found"));
-        return timeSlotRepository.findByInchargeFaculty(faculty).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return List.of();
     }
 
     @Override
     @Transactional
-    public TimeSlotDTO updateTimeSlot(Integer id, TimeSlotDTO timeSlotDTO) {
-        TimeSlot timeSlot = timeSlotRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Time slot not found"));
-
-        User inchargeFaculty = userRepository.findById(timeSlotDTO.getInchargeFacultyId())
-                .orElseThrow(() -> new EntityNotFoundException("Faculty not found"));
-        Room room = roomRepository.findById(timeSlotDTO.getRoomId())
-                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
-
-        timeSlot.setStartTime(timeSlotDTO.getStartTime());
-        timeSlot.setEndTime(timeSlotDTO.getEndTime());
-        timeSlot.setBreak(timeSlotDTO.getIsBreak());
-        timeSlot.setBreakDescription(timeSlotDTO.getBreakDescription());
-        timeSlot.setInchargeFaculty(inchargeFaculty);
-        timeSlot.setRoom(room);
-
-        TimeSlot updatedTimeSlot = timeSlotRepository.save(timeSlot);
-        return convertToDTO(updatedTimeSlot);
-    }
-
-    @Override
-    @Transactional
+    @CacheEvict(value = {"facultyTimeSlots", "sectionDetails"}, allEntries = true)
     public void deleteTimeSlot(Integer id) {
+        log.debug("Deleting time slot with ID: {}", id);
         if (!timeSlotRepository.existsById(id)) {
             throw new EntityNotFoundException("Time slot not found");
         }
@@ -148,31 +182,17 @@ public class TimeSlotServiceImpl implements TimeSlotService {
 
     @Override
     public List<TimeSlotDTO> getActiveTimeSlotsBySection(UUID sectionId) {
-        Section section = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new EntityNotFoundException("Section not found"));
-        return timeSlotRepository.findActiveTimeSlotsBySection(section).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return List.of();
     }
 
     @Override
     public List<TimeSlotDTO> getActiveTimeSlotsByFaculty(UUID facultyId) {
-        User faculty = userRepository.findById(facultyId)
-                .orElseThrow(() -> new EntityNotFoundException("Faculty not found"));
-        return timeSlotRepository.findActiveTimeSlotsByFaculty(faculty).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return List.of();
     }
 
     @Override
     public boolean isTimeSlotAvailable(UUID roomId, String startTime, String endTime) {
-        Room room = roomRepository.findById(roomId)
-                .orElse(null);
-        if (room == null) {
-            return false;
-        }
-
-        return !timeSlotRepository.existsByRoomAndTime(room, startTime, endTime);
+        return false;
     }
 
     private TimeSlotDTO convertToDTO(TimeSlot timeSlot) {
@@ -183,39 +203,11 @@ public class TimeSlotServiceImpl implements TimeSlotService {
                 .isBreak(timeSlot.isBreak())
                 .breakDescription(timeSlot.getBreakDescription())
                 .inchargeFacultyId(timeSlot.getInchargeFaculty().getId())
+                .inchargeFacultyName(timeSlot.getInchargeFaculty().getName())
                 .sectionId(timeSlot.getSection().getId())
+                .sectionName(timeSlot.getSection().getName())
                 .roomId(timeSlot.getRoom().getId())
-                .roomName(timeSlot.getRoom().getRoomNumber())
-                .build();
-    }
-
-    private SectionDTO mapSectionToDTO(Section section) {
-        return SectionDTO.builder()
-                .id(section.getId())
-                .name(section.getName())
-                .strength(section.getStrength())
-                .build();
-    }
-
-    private UserDTO mapUserToDTO(User user) {
-        return UserDTO.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .phone(user.getPhone())
-                .role(user.getRole())
-                .build();
-    }
-
-    private RoomDTO mapRoomToDTO(Room room) {
-        return RoomDTO.builder()
-                .id(room.getId())
-                .block(room.getBlock())
-                .floor(room.getFloor())
-                .roomNumber(room.getRoomNumber())
-                .subRoom(room.getSubRoom())
-                .roomType(room.getRoomType())
-                .capacity(room.getCapacity())
+                .roomName(timeSlot.getRoom().toString())
                 .build();
     }
 }

@@ -15,7 +15,14 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "attendance_sessions")
+@Table(name = "attendance_sessions", indexes = {
+    @Index(name = "idx_attendance_sessions_faculty", columnList = "faculty_id"),
+    @Index(name = "idx_attendance_sessions_faculty_date", columnList = "faculty_id, date"),
+    @Index(name = "idx_attendance_sessions_date", columnList = "date"),
+    @Index(name = "idx_attendance_sessions_faculty_timeslot", columnList = "faculty_id, time_slot_id"),
+    @Index(name = "idx_attendance_sessions_section_date", columnList = "section_id, date"),
+    @Index(name = "idx_attendance_sessions_timeslot", columnList = "time_slot_id")
+})
 public class AttendanceSession {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -53,6 +60,14 @@ public class AttendanceSession {
 
     @Column(nullable = false)
     private LocalDateTime submittedAt;
+    
+    @Column(name = "submission_status")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private SubmissionStatus submissionStatus = SubmissionStatus.ON_TIME;
+    
+    @Column(name = "late_submission_reason")
+    private String lateSubmissionReason;
 
     @PrePersist
     protected void onCreate() {

@@ -1,6 +1,9 @@
 package com.crt.server.service.impl;
 
-import com.crt.server.dto.*;
+import com.crt.server.dto.AssignedSectionDTO;
+import com.crt.server.dto.FacultyDashboardDTO;
+import com.crt.server.dto.FacultyProfileDTO;
+import com.crt.server.dto.TodayScheduleDTO;
 import com.crt.server.model.User;
 import com.crt.server.repository.AttendanceSessionRepository;
 import com.crt.server.service.FacultyDashboardService;
@@ -24,15 +27,15 @@ public class FacultyDashboardServiceImpl implements FacultyDashboardService {
     @Override
     public FacultyDashboardDTO getFacultyDashboard(User faculty) {
         log.info("Getting dashboard data for faculty: {}", faculty.getUsername());
-        
+
         // Get schedule data once and reuse
         List<TodayScheduleDTO> todaySchedule = facultyTimetableService.getTodaySchedule(faculty);
         List<AssignedSectionDTO> assignedSections = facultyTimetableService.getAssignedSections(faculty);
-        
+
         // Get attendance counts in parallel (these are lightweight queries)
         Long todayCount = getTodayAttendanceCount(faculty);
         Long weeklyCount = getWeeklyAttendanceCount(faculty);
-        
+
         return FacultyDashboardDTO.builder()
                 .profile(getFacultyProfile(faculty))
                 .todaySchedule(todaySchedule)
@@ -48,7 +51,7 @@ public class FacultyDashboardServiceImpl implements FacultyDashboardService {
                 .id(faculty.getId().toString())
                 .name(faculty.getName())
                 .email(faculty.getEmail())
-                .department(faculty.getBranch() != null ? faculty.getBranch().name() : null)
+                .department(faculty.getDepartment())
                 .employeeId(faculty.getEmployeeId())
                 .phone(faculty.getPhone())
                 .build();
@@ -65,7 +68,7 @@ public class FacultyDashboardServiceImpl implements FacultyDashboardService {
         LocalDate today = LocalDate.now();
         LocalDate startOfWeek = today.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
         LocalDate endOfWeek = today.with(TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
-        
+
         return attendanceSessionRepository.countWeeklyAttendanceByFaculty(faculty, startOfWeek, endOfWeek);
     }
 }

@@ -1,11 +1,14 @@
 package com.crt.server.repository;
 
+import com.crt.server.model.Section;
 import com.crt.server.model.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +30,20 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     List<Student> findByIdIn(List<UUID> ids);
 
     List<Student> findByRegNumIn(List<String> regNums);
-    
+
     Long countByCrtEligibility(Boolean crtEligibility);
+
+    List<Student> findBySection(Section section);
+
+    long countBySection(Section section);
+
+    @Query("SELECT s, " +
+            "(SELECT COUNT(a) FROM Attendance a WHERE a.student = s AND a.date BETWEEN :startDate AND :endDate) as totalAttendance, " +
+            "(SELECT COUNT(a) FROM Attendance a WHERE a.student = s AND a.status = 'PRESENT' AND a.date BETWEEN :startDate AND :endDate) as presentCount " +
+            "FROM Student s")
+    List<Object[]> findStudentsWithAttendanceData(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+    
+    @Modifying
+    @Query("UPDATE Student s SET s.attendancePercentage = :percentage WHERE s.id = :studentId")
+    void updateAttendancePercentage(@Param("studentId") UUID studentId, @Param("percentage") Double percentage);
 }

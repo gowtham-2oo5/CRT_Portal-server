@@ -1,5 +1,6 @@
 package com.crt.server.dto;
 
+import com.crt.server.model.SubmissionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,4 +26,6 @@ public class AttendanceSessionResponseDTO {
     private Integer absentCount;
     private Double attendancePercentage;
     private LocalDateTime submittedAt;
+    private SubmissionStatus submissionStatus;
+    private String lateSubmissionReason;
 }

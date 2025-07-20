@@ -17,7 +17,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "sections")
+@Table(name = "sections", indexes = {
+    @Index(name = "idx_sections_training", columnList = "training_id"),
+    @Index(name = "idx_sections_name", columnList = "name")
+})
 public class Section {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,8 +33,7 @@ public class Section {
     @JoinColumn(name = "training_id", nullable = false)
     private Training training;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "section_students", joinColumns = @JoinColumn(name = "section_id"), inverseJoinColumns = @JoinColumn(name = "student_id"))
+    @OneToMany(mappedBy = "section", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<Student> students = new HashSet<>();
 

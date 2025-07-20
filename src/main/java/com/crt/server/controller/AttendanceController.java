@@ -2,16 +2,19 @@ package com.crt.server.controller;
 
 import com.crt.server.dto.*;
 import com.crt.server.service.AttendanceService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -30,6 +33,12 @@ public class AttendanceController {
     @PostMapping("/mark")
     public ResponseEntity<List<AttendanceDTO>> markAttendance(@Valid @RequestBody MarkAttendanceDTO markAttendanceDTO) {
         log.info("Marking attendance for: {}", markAttendanceDTO);
+        
+        // Set isAdminRequest flag based on user role
+        boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ADMIN"));
+        markAttendanceDTO.setIsAdminRequest(isAdmin);
+        
         return ResponseEntity.ok(attendanceService.markAttendance(markAttendanceDTO));
     }
 
@@ -37,6 +46,12 @@ public class AttendanceController {
     public ResponseEntity<BulkAttendanceResponseDTO> markBulkAttendance(
             @Valid @RequestBody BulkAttendanceDTO bulkAttendanceDTO) {
         log.info("Marking bulk attendance");
+        
+        // Set isAdminRequest flag based on user role
+        boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ADMIN"));
+        bulkAttendanceDTO.setIsAdminRequest(isAdmin);
+        
         return ResponseEntity.ok(attendanceService.markBulkAttendance(bulkAttendanceDTO));
     }
 
@@ -157,5 +172,33 @@ public class AttendanceController {
                 return LocalDateTime.parse(dateStr, formatter);
             }
         }
+    }
+
+
+
+    @GetMapping("/absentees/section/{sectionId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'FACULTY')")
+    public ResponseEntity<List<AbsenteeDTO>> getAbsenteesByDateAndSection(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @PathVariable UUID sectionId) {
+        return ResponseEntity.ok(attendanceService.getAbsenteesByDateAndSection(date, sectionId));
+    }
+
+    @GetMapping("/absentees/{timeSlotId}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<List<AbsenteeDTO>> getAbsenteesByTimeSlot(
+            @PathVariable Integer timeSlotId
+    ){
+        return ResponseEntity.ok(attendanceService.getAbsenteesByTimeSlotId(timeSlotId));
+    }
+    
+    @GetMapping("/time-slots/filter")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'FACULTY')")
+    public ResponseEntity<TimeSlotFilterResponseDTO> getTimeSlotsByDayAndTime(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime) {
+        log.info("Filtering time slots for date: {}, startTime: {}, endTime: {}", date, startTime, endTime);
+        return ResponseEntity.ok(attendanceService.getTimeSlotsByDayAndTime(date, startTime, endTime));
     }
 }

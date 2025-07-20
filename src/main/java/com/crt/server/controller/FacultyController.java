@@ -7,10 +7,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -117,6 +119,7 @@ public class FacultyController {
     public ResponseEntity<AttendanceSubmissionResponseDTO> submitAttendance(
             @RequestBody AttendanceSubmissionDTO submissionDTO) {
         log.info("Submitting attendance for time slot: {}", submissionDTO.getTimeSlotId());
+        log.info("REQUEST: {}", submissionDTO);
         
         User currentUser = currentUserService.getCurrentUser();
         AttendanceSessionResponseDTO sessionResponse = facultyAttendanceService.submitAttendance(currentUser, submissionDTO);
@@ -138,5 +141,37 @@ public class FacultyController {
         User currentUser = userService.getFacById(id);
         List<AssignedSectionDTO> sections = facultyTimetableService.getAssignedSections(currentUser);
         return ResponseEntity.ok(sections);
+    }
+    
+    @GetMapping("/missed-sessions")
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('FACULTY')")
+    @Operation(summary = "Get missed attendance sessions", description = "Returns all missed attendance sessions for the faculty")
+    public ResponseEntity<List<AttendanceSessionDTO>> getMissedAttendanceSessions() {
+        log.info("Getting missed attendance sessions for faculty");
+        User currentUser = currentUserService.getCurrentUser();
+        List<AttendanceSessionDTO> missedSessions = facultyAttendanceService.getMissedAttendanceSessions(currentUser);
+        return ResponseEntity.ok(missedSessions);
+    }
+    
+    @GetMapping("/missed-sessions/date")
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('FACULTY')")
+    @Operation(summary = "Get missed attendance sessions by date", description = "Returns all missed attendance sessions for the faculty on a specific date")
+    public ResponseEntity<List<AttendanceSessionDTO>> getMissedAttendanceSessionsByDate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        log.info("Getting missed attendance sessions for faculty on date: {}", date);
+        User currentUser = currentUserService.getCurrentUser();
+        List<AttendanceSessionDTO> missedSessions = facultyAttendanceService.getMissedAttendanceSessionsByDate(currentUser, date);
+        return ResponseEntity.ok(missedSessions);
+    }
+    
+    @PostMapping("/late-submission")
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('FACULTY')")
+    @Operation(summary = "Submit late attendance reason", description = "Submit reason for late attendance submission")
+    public ResponseEntity<AttendanceSessionDTO> submitLateAttendanceReason(
+            @RequestBody LateSubmissionDTO lateSubmissionDTO) {
+        log.info("Submitting late attendance reason for session: {}", lateSubmissionDTO.getSessionId());
+        User currentUser = currentUserService.getCurrentUser();
+        AttendanceSessionDTO updatedSession = facultyAttendanceService.submitLateAttendanceReason(lateSubmissionDTO, currentUser);
+        return ResponseEntity.ok(updatedSession);
     }
 }

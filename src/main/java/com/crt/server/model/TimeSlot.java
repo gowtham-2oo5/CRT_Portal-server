@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -23,7 +24,14 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "time_slots")
+@Table(name = "time_slots", indexes = {
+    @Index(name = "idx_timeslots_faculty", columnList = "incharge_faculty_id"),
+    @Index(name = "idx_timeslots_faculty_break", columnList = "incharge_faculty_id, isBreak"),
+    @Index(name = "idx_timeslots_section", columnList = "section_id"),
+    @Index(name = "idx_timeslots_faculty_section", columnList = "incharge_faculty_id, section_id"),
+    @Index(name = "idx_timeslots_schedule", columnList = "schedule_id"),
+    @Index(name = "idx_timeslots_room", columnList = "room_id")
+})
 public class TimeSlot {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
