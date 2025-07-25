@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/time-slot-templates")
@@ -24,7 +25,11 @@ public class TimeSlotTemplateController {
     @GetMapping
     public ResponseEntity<List<TimeSlotTemplateDTO>> getAllTimeSlotTemplates() {
         log.info("Getting all time slot templates");
-        return ResponseEntity.ok(timeSlotTemplateService.getAllTimeSlotTemplates());
+        List<TimeSlotTemplateDTO> templates = timeSlotTemplateService.getAllTimeSlotTemplates();
+        for (TimeSlotTemplateDTO template : templates) {
+            System.out.println(template.getName());
+        }
+        return ResponseEntity.ok(templates);
     }
 
     @GetMapping("/{templateName}")

@@ -33,12 +33,12 @@ public class AttendanceController {
     @PostMapping("/mark")
     public ResponseEntity<List<AttendanceDTO>> markAttendance(@Valid @RequestBody MarkAttendanceDTO markAttendanceDTO) {
         log.info("Marking attendance for: {}", markAttendanceDTO);
-        
+
         // Set isAdminRequest flag based on user role
         boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ADMIN"));
         markAttendanceDTO.setIsAdminRequest(isAdmin);
-        
+
         return ResponseEntity.ok(attendanceService.markAttendance(markAttendanceDTO));
     }
 
@@ -46,12 +46,12 @@ public class AttendanceController {
     public ResponseEntity<BulkAttendanceResponseDTO> markBulkAttendance(
             @Valid @RequestBody BulkAttendanceDTO bulkAttendanceDTO) {
         log.info("Marking bulk attendance");
-        
+
         // Set isAdminRequest flag based on user role
         boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ADMIN"));
         bulkAttendanceDTO.setIsAdminRequest(isAdmin);
-        
+
         return ResponseEntity.ok(attendanceService.markBulkAttendance(bulkAttendanceDTO));
     }
 
@@ -157,24 +157,42 @@ public class AttendanceController {
         }
     }
 
+    /**
+     * Improved date parsing method with better error handling and support for multiple formats
+     */
     private LocalDateTime parseDateTime(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Date string cannot be null or empty");
+        }
+
+        String trimmedDate = dateStr.trim();
+
         try {
-            // Try parsing as full datetime first
-            return LocalDateTime.parse(dateStr);
+            // Try parsing as full datetime first (ISO format)
+            return LocalDateTime.parse(trimmedDate);
         } catch (DateTimeParseException e1) {
             try {
                 // Try parsing as date only, then convert to datetime
-                LocalDate date = LocalDate.parse(dateStr);
+                LocalDate date = LocalDate.parse(trimmedDate);
                 return date.atStartOfDay();
             } catch (DateTimeParseException e2) {
-                // Try with custom formatter
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                return LocalDateTime.parse(dateStr, formatter);
+                try {
+                    // Try with custom formatter for "yyyy-MM-dd HH:mm:ss"
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    return LocalDateTime.parse(trimmedDate, formatter);
+                } catch (DateTimeParseException e3) {
+                    try {
+                        // Try with another common format "dd/MM/yyyy HH:mm:ss"
+                        DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+                        return LocalDateTime.parse(trimmedDate, formatter2);
+                    } catch (DateTimeParseException e4) {
+                        log.error("Failed to parse date string: '{}'. Supported formats: ISO (yyyy-MM-ddTHH:mm:ss), Date only (yyyy-MM-dd), yyyy-MM-dd HH:mm:ss, dd/MM/yyyy HH:mm:ss", trimmedDate);
+                        throw new IllegalArgumentException("Invalid date format: '" + trimmedDate + "'. Supported formats: ISO (yyyy-MM-ddTHH:mm:ss), Date only (yyyy-MM-dd), yyyy-MM-dd HH:mm:ss, dd/MM/yyyy HH:mm:ss");
+                    }
+                }
             }
         }
     }
-
-
 
     @GetMapping("/absentees/section/{sectionId}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'FACULTY')")
@@ -187,11 +205,15 @@ public class AttendanceController {
     @GetMapping("/absentees/{timeSlotId}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<AbsenteeDTO>> getAbsenteesByTimeSlot(
-            @PathVariable Integer timeSlotId
-    ){
-        return ResponseEntity.ok(attendanceService.getAbsenteesByTimeSlotId(timeSlotId));
+            @PathVariable Integer timeSlotId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime date
+    ) {
+        if (date == null) {
+            date = LocalDateTime.now();
+        }
+        return ResponseEntity.ok(attendanceService.getAbsenteesByTimeSlotIdAndDate(timeSlotId, date));
     }
-    
+
     @GetMapping("/time-slots/filter")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'FACULTY')")
     public ResponseEntity<TimeSlotFilterResponseDTO> getTimeSlotsByDayAndTime(
@@ -200,5 +222,27 @@ public class AttendanceController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime) {
         log.info("Filtering time slots for date: {}, startTime: {}, endTime: {}", date, startTime, endTime);
         return ResponseEntity.ok(attendanceService.getTimeSlotsByDayAndTime(date, startTime, endTime));
+    }
+
+    /**
+     * Admin endpoint to override attendance for a specific time slot and date
+     */
+    @PostMapping("/admin/override")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<BulkAttendanceResponseDTO> adminOverrideAttendance(
+            @Valid @RequestBody AdminAttendanceRequestDTO requestDTO) {
+        log.info("Admin override attendance request for timeSlotId: {}, dateTime: {}",
+                requestDTO.getTimeSlotId(), requestDTO.getDateTime());
+        return ResponseEntity.ok(attendanceService.adminOverrideAttendance(requestDTO));
+    }
+
+    /**
+     * Get all absentees for a specific date (Admin only)
+     */
+    @GetMapping("/absentees")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<List<AbsenteeDTO>> getAbsenteesByDate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(attendanceService.getAbsenteesByDate(date));
     }
 }

@@ -138,6 +138,11 @@ public class UserController {
         }
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserDTO> getAuthenticatedUser() {
+        return ResponseEntity.ok(userService.getAuthenticatedUser());
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable UUID id, @RequestBody UserDTO updateUserDTO) {
         try {

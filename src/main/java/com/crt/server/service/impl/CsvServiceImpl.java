@@ -24,7 +24,7 @@ public class CsvServiceImpl implements CsvService {
             CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
                     .setHeader(headers)
                     .setSkipHeaderRecord(true)
-                    .build();
+                    .get();
 
             try (CSVParser csvParser = csvFormat.parse(reader)) {
                 return csvParser.getRecords();

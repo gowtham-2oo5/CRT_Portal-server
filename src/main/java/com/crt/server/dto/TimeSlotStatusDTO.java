@@ -1,6 +1,5 @@
 package com.crt.server.dto;
 
-import com.crt.server.model.AttendanceStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,7 +21,6 @@ public class TimeSlotStatusDTO {
     private String sectionName;
     private UUID facultyId;
     private String facultyName;
-    private AttendanceStatus status;
     private boolean attendancePosted;
     private boolean pastEndTime;
 }

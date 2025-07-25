@@ -54,4 +54,6 @@ public interface UserService {
 
     // Update first login status
     void updateFirstLoginStatus(String email, boolean isFirstLogin);
+
+    UserDTO getAuthenticatedUser();
 }

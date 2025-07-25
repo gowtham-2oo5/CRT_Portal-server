@@ -1,7 +1,11 @@
 package com.crt.server.service.impl;
 
+import com.crt.server.security.CookieService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import com.crt.server.dto.AuthRequestDTO;
 import com.crt.server.dto.AuthResponseDTO;
@@ -20,6 +24,9 @@ import com.crt.server.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -31,6 +38,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordService passwordService;
     private final OTPService otpService;
     private final JwtService jwtService;
+    private final CookieService cookieService;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     public AuthResponseDTO login(AuthRequestDTO loginRequest) {
@@ -56,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public AuthResponseDTO verifyOTP(AuthRequestDTO otpVerification) {
+    public AuthResponseDTO verifyOTP(AuthRequestDTO otpVerification, HttpServletResponse response) {
         String input = otpVerification.getUsernameOrEmail();
 
         User user;
@@ -78,29 +87,45 @@ public class AuthServiceImpl implements AuthService {
         UserDTO userDTO = userService.getUserByEmail(user.getEmail());
 
         String token = jwtService.generateToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
-        if(wasFirst) userService.updateFirstLoginStatus(user.getEmail(), false);
+//        String refreshToken = jwtService.generateRefreshToken(user);
+        if (wasFirst) userService.updateFirstLoginStatus(user.getEmail(), false);
 //        System.out.println(user.isFirstLogin());
 //        System.out.println("HEREES THE TOKEN RA: " + token);
 
+        String refreshTokenString = jwtService.generateRefreshToken(user);
+        stringRedisTemplate.opsForValue().set(refreshTokenString, user.getUsername(), jwtService.getRefreshExpiration(), TimeUnit.MILLISECONDS);
+
+        if (wasFirst) userService.updateFirstLoginStatus(user.getEmail(), false);
+
+        cookieService.createAccessTokenCookie(token, response);
+        cookieService.createRefreshTokenCookie(refreshTokenString, response);
+
+
         return AuthResponseDTO.builder()
                 .message("OTP verified successfully")
-                .token(token)
-                .refreshToken(refreshToken)
                 .user(userDTO)
                 .isFirstLogin(wasFirst)
                 .build();
     }
 
     @Override
-    public AuthResponseDTO refreshToken(String refreshToken) {
+    public AuthResponseDTO refreshToken(String refreshToken, HttpServletResponse response) {
         String username = jwtService.extractUsername(refreshToken);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        // Check if refresh token exists in Redis
+        String storedUsername = stringRedisTemplate.opsForValue().get(refreshToken);
+        if (storedUsername == null || !storedUsername.equals(username)) {
+            throw new AuthenticationException("Invalid or expired refresh token");
+        }
+
         if (!jwtService.isTokenValid(refreshToken, user)) {
             throw new AuthenticationException("Invalid refresh token");
         }
+
+        // Delete old refresh token from Redis
+        stringRedisTemplate.delete(refreshToken);
 
         UserDTO userDTO = userService.getUserByEmail(user.getEmail());
 
@@ -108,10 +133,15 @@ public class AuthServiceImpl implements AuthService {
         String newToken = jwtService.generateToken(user);
         String newRefreshToken = jwtService.generateRefreshToken(user);
 
+        // Store new refresh token in Redis
+        stringRedisTemplate.opsForValue().set(newRefreshToken, user.getUsername(), jwtService.getRefreshExpiration(), TimeUnit.MILLISECONDS);
+
+        // Set new tokens as HttpOnly cookies
+        cookieService.createAccessTokenCookie(newToken, response);
+        cookieService.createRefreshTokenCookie(newRefreshToken, response);
+
         return AuthResponseDTO.builder()
                 .message("Token refreshed successfully")
-                .token(newToken)
-                .refreshToken(newRefreshToken)
                 .user(userDTO)
                 .build();
     }
@@ -191,5 +221,15 @@ public class AuthServiceImpl implements AuthService {
         String firstChar = email.substring(0, 1);
         String lastFourChars = email.substring(atIndex - 4, atIndex);
         return firstChar + "***" + lastFourChars + email.substring(atIndex);
+    }
+
+    @Override
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        String refreshToken = cookieService.getRefreshTokenFromCookies(request);
+
+        if (refreshToken != null) {
+            stringRedisTemplate.delete(refreshToken);
+        }
+        cookieService.clearAuthCookies(response);
     }
 }

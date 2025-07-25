@@ -69,4 +69,18 @@ public interface AttendanceService {
      * @return Response containing time slot status information
      */
     TimeSlotFilterResponseDTO getTimeSlotsByDayAndTime(LocalDate date, LocalTime startTime, LocalTime endTime);
+
+    BulkAttendanceResponseDTO adminOverrideAttendance(AdminAttendanceRequestDTO requestDTO);
+
+    List<AbsenteeDTO> getAbsenteesByTimeSlotIdAndDate(Integer timeSlotId, LocalDateTime date);
+    
+    /**
+     * Debug method to get all attendance records for a time slot on a specific date
+     * This helps troubleshoot why absentees might not be showing up
+     * 
+     * @param timeSlotId The time slot ID
+     * @param date The date to check
+     * @return List of all attendance records (not just absentees)
+     */
+    List<AttendanceDTO> debugGetAllAttendanceForTimeSlotAndDate(Integer timeSlotId, LocalDateTime date);
 }

@@ -121,6 +121,20 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
      */
     List<Attendance> findByAttendanceSession(AttendanceSession attendanceSession);
 
-    @Query("SELECT a FROM Attendance a WHERE a.status = 'ABSENT' AND a.timeSlot IN :timeSlot")
-    List<Attendance> getAbsenteesByTimeSlot(TimeSlot timeSlot);
+    @Query("SELECT a FROM Attendance a WHERE a.status = 'ABSENT' AND a.timeSlot = :timeSlot")
+    List<Attendance> getAbsenteesByTimeSlot(@Param("timeSlot") TimeSlot timeSlot);
+
+    @Query("SELECT a FROM Attendance a WHERE a.status = 'ABSENT' AND a.timeSlot = :timeSlot AND DATE(a.date) = DATE(:date)")
+    List<Attendance> getAbsenteesByTimeSlotAndDate(@Param("timeSlot") TimeSlot timeSlot, @Param("date") LocalDateTime date);
+    
+    // FIX: Add batch processing for archiving to prevent OutOfMemoryError
+    @Query("SELECT a FROM Attendance a WHERE a.date BETWEEN :startDate AND :endDate ORDER BY a.id")
+    List<Attendance> findByDateBetweenOrderById(
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate,
+                        Pageable pageable);
+                        
+    // DEBUG: Method to help troubleshoot absentee queries
+    @Query("SELECT a FROM Attendance a WHERE a.timeSlot.id = :timeSlotId AND DATE(a.date) = DATE(:date)")
+    List<Attendance> findByTimeSlotIdAndDateDebug(@Param("timeSlotId") Integer timeSlotId, @Param("date") LocalDateTime date);
 }

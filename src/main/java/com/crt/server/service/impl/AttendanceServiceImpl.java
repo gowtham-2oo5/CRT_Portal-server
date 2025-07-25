@@ -9,8 +9,6 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -508,6 +506,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .orElseThrow(() -> new EntityNotFoundException("Student not found"));
 
         return attendanceRepository.findByStudentIdAndDateBetween(studentId, startDate, endDate).stream()
+//                .sorted(Comparator.comparing(Attendance::getDate))
                 .map(this::convertToDTO).collect(Collectors.toList());
     }
 
@@ -517,7 +516,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         TimeSlot timeSlot = timeSlotRepository.findById(timeSlotId)
                 .orElseThrow(() -> new EntityNotFoundException("Time slot not found"));
 
-        return attendanceRepository.findByTimeSlotIdAndDate(timeSlotId, date).stream().map(this::convertToDTO)
+        return attendanceRepository.
+                findByTimeSlotIdAndDate(timeSlotId, date).stream().map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -548,15 +548,44 @@ public class AttendanceServiceImpl implements AttendanceService {
         LocalDateTime endDate = startDate.plusMonths(1).minusSeconds(1);
 
         // FIX 13: Use batch processing to avoid loading all records into memory
-        List<Attendance> recordsToArchive = attendanceRepository.findByDateBetween(startDate, endDate);
-
-        if (!recordsToArchive.isEmpty()) {
-            List<AttendanceArchive> archives = recordsToArchive.stream().map(this::convertToArchive)
+        // Process records in batches to prevent OutOfMemoryError for large datasets
+        int batchSize = 1000;
+        int page = 0;
+        long totalRecords = attendanceRepository.countByDateBetween(startDate, endDate);
+        
+        log.info("Starting archival process for {}/{} - Total records to archive: {}", year, month, totalRecords);
+        
+        if (totalRecords == 0) {
+            log.info("No records found to archive for {}/{}", year, month);
+            return;
+        }
+        
+        long processedRecords = 0;
+        
+        while (processedRecords < totalRecords) {
+            Pageable pageable = PageRequest.of(page, batchSize);
+            List<Attendance> recordsToArchive = attendanceRepository.findByDateBetweenOrderById(startDate, endDate, pageable);
+            
+            if (recordsToArchive.isEmpty()) {
+                break;
+            }
+            
+            // Convert to archive records
+            List<AttendanceArchive> archives = recordsToArchive.stream()
+                    .map(this::convertToArchive)
                     .collect(Collectors.toList());
-
+            
+            // Save archives and delete original records in the same transaction
             attendanceArchiveRepository.saveAll(archives);
             attendanceRepository.deleteAll(recordsToArchive);
+            
+            processedRecords += recordsToArchive.size();
+            page++;
+            
+            log.info("Archived batch {} - Progress: {}/{} records", page, processedRecords, totalRecords);
         }
+        
+        log.info("Completed archival process for {}/{} - Total archived: {} records", year, month, processedRecords);
     }
 
     @Override
@@ -696,6 +725,17 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .collect(Collectors.toList());
     }
 
+
+    @Override
+    public List<AbsenteeDTO> getAbsenteesByTimeSlotIdAndDate(Integer timeSlotId, LocalDateTime date){
+        TimeSlot timeSlot = timeSlotRepository.findById(timeSlotId).orElseThrow(() -> new EntityNotFoundException("TimeSlot not found with id: " + timeSlotId));
+        List<Attendance> absentees = attendanceRepository.getAbsenteesByTimeSlotAndDate(timeSlot, date);
+        return absentees.stream()
+                .map(this::mapToAbsenteeDTO)
+                .sorted(Comparator.comparing(AbsenteeDTO::getRegNum))
+                .collect(Collectors.toList());
+    }
+
     private AbsenteeDTO mapToAbsenteeDTO(Attendance attendance) {
         return AbsenteeDTO.builder()
                 .studentId(attendance.getStudent().getId())
@@ -799,5 +839,117 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .timeSlots(timeSlotStatusDTOs)
                 .facultiesWithPendingAttendance(facultiesWithPendingAttendance)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public BulkAttendanceResponseDTO adminOverrideAttendance(AdminAttendanceRequestDTO requestDTO) {
+        log.info("Admin override attendance request received for timeSlotId: {}, dateTime: {}",
+                requestDTO.getTimeSlotId(), requestDTO.getDateTime());
+
+        TimeSlot timeSlot = timeSlotRepository.findById(requestDTO.getTimeSlotId())
+                .orElseThrow(() -> new EntityNotFoundException("Time slot not found with ID: " + requestDTO.getTimeSlotId()));
+
+        LocalDateTime attendanceDateTime = requestDTO.getParsedDateTime();
+
+        // 1. Delete existing attendance records for this time slot and date
+        List<Attendance> existingAttendance = attendanceRepository.findByTimeSlotAndDate(timeSlot, attendanceDateTime);
+        if (!existingAttendance.isEmpty()) {
+            attendanceRepository.deleteAll(existingAttendance);
+            log.info("Deleted {} existing attendance records for timeSlotId: {} on date: {}",
+                    existingAttendance.size(), timeSlot.getId(), attendanceDateTime);
+        }
+
+        // 2. Get all students in the section associated with the time slot
+        Section section = timeSlot.getSection();
+        Set<Student> allStudentsInSection = section.getStudents();
+        log.info("Found {} students in section {} for timeSlotId: {}",
+                allStudentsInSection.size(), section.getName(), timeSlot.getId());
+
+        // 3. Prepare new attendance records
+        List<Attendance> newAttendances = new ArrayList<>();
+        Set<UUID> absentStudentIds = new HashSet<>(requestDTO.getAbsentStudentIds());
+        Map<UUID, String> lateStudentFeedback = requestDTO.getLateStudents().stream()
+                .collect(Collectors.toMap(
+                        dto -> UUID.fromString(dto.getId()),
+                        StudentAttendanceDTO::getFeedback
+                ));
+
+        for (Student student : allStudentsInSection) {
+            Attendance attendance = new Attendance();
+            attendance.setStudent(student);
+            attendance.setTimeSlot(timeSlot);
+            attendance.setDate(attendanceDateTime);
+
+            if (absentStudentIds.contains(student.getId())) {
+                attendance.setStatus(AttendanceStatus.ABSENT);
+                attendance.setFeedback(requestDTO.getOverrideReason()); // Use override reason for absent students
+            } else if (lateStudentFeedback.containsKey(student.getId())) {
+                attendance.setStatus(AttendanceStatus.LATE);
+                attendance.setFeedback(lateStudentFeedback.get(student.getId()));
+            } else {
+                attendance.setStatus(AttendanceStatus.PRESENT);
+            }
+            newAttendances.add(attendance);
+        }
+
+        // 4. Save new attendance records
+        List<Attendance> savedAttendances = attendanceRepository.saveAll(newAttendances);
+        log.info("Saved {} new attendance records for timeSlotId: {} on date: {}",
+                savedAttendances.size(), timeSlot.getId(), attendanceDateTime);
+
+        // 5. Update attendance percentage for all affected students
+        allStudentsInSection.forEach(this::updateStudentAttendancePercentage);
+        log.info("Updated attendance percentages for all students in section {}.", section.getName());
+        
+        // 6. Convert saved attendances to DTOs for response
+        List<AttendanceDTO> attendanceDTOs = savedAttendances.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        
+        // 7. Build and return response
+        return BulkAttendanceResponseDTO.builder()
+                .totalProcessed(savedAttendances.size())
+                .successCount(savedAttendances.size())
+                .failureCount(0)
+                .successfulRecords(attendanceDTOs)
+                .errors(new ArrayList<>())
+                .build();
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<AttendanceDTO> debugGetAllAttendanceForTimeSlotAndDate(Integer timeSlotId, LocalDateTime date) {
+        log.info("DEBUG: Getting all attendance records for timeSlotId: {} on date: {}", timeSlotId, date);
+        
+        TimeSlot timeSlot = timeSlotRepository.findById(timeSlotId)
+                .orElseThrow(() -> new EntityNotFoundException("TimeSlot not found with id: " + timeSlotId));
+        
+        log.info("DEBUG: Found timeSlot: {} for section: {}", timeSlot.getId(), timeSlot.getSection().getName());
+        
+        // Get all attendance records for this time slot and date (using DATE comparison)
+        List<Attendance> allAttendance = attendanceRepository.findByTimeSlotIdAndDateDebug(timeSlotId, date);
+        
+        log.info("DEBUG: Found {} total attendance records", allAttendance.size());
+        
+        // Log each record for debugging
+        allAttendance.forEach(attendance -> {
+            log.info("DEBUG: Attendance - Student: {}, Status: {}, Date: {}, TimeSlot: {}", 
+                    attendance.getStudent().getRegNum(), 
+                    attendance.getStatus(), 
+                    attendance.getDate(),
+                    attendance.getTimeSlot().getId());
+        });
+        
+        // Filter and log absentees specifically
+        List<Attendance> absentees = allAttendance.stream()
+                .filter(a -> a.getStatus() == AttendanceStatus.ABSENT)
+                .collect(Collectors.toList());
+        
+        log.info("DEBUG: Found {} absentees out of {} total records", absentees.size(), allAttendance.size());
+        
+        return allAttendance.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }

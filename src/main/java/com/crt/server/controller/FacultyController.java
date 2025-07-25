@@ -13,8 +13,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -58,7 +60,7 @@ public class FacultyController {
     public ResponseEntity<CurrentSessionDTO> getCurrentSession(@RequestParam("id") UUID id) {
         log.info("Getting current active session");
         User currentUser = userService.getFacById(id);
-        
+
         return facultyTimetableService.getCurrentActiveTimeSlot(currentUser)
                 .map(timeSlot -> {
                     CurrentSessionDTO currentSession = CurrentSessionDTO.builder()
@@ -86,12 +88,12 @@ public class FacultyController {
     public ResponseEntity<StudentListDTO> getStudentsForSection(@PathVariable UUID sectionId) {
         log.info("Getting students for section: {}", sectionId);
         List<StudentDTO> students = facultyAttendanceService.getStudentsForSection(sectionId);
-        
+
         StudentListDTO response = StudentListDTO.builder()
-                .students(students)
+                .students(students.stream().sorted(Comparator.comparing(StudentDTO::getRegNum)).collect(Collectors.toList()))
                 .totalCount(students.size())
                 .build();
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -101,7 +103,7 @@ public class FacultyController {
     public ResponseEntity<StudentListDTO> getStudentsForTimeSlot(@PathVariable Integer timeSlotId) {
         log.info("Getting students for time slot: {}", timeSlotId);
         List<StudentDTO> students = facultyAttendanceService.getStudentsForTimeSlot(timeSlotId);
-        
+
         StudentListDTO response = StudentListDTO.builder()
                 .students(students)
                 .totalCount(students.size())
@@ -109,7 +111,7 @@ public class FacultyController {
                 .sectionName(students.getFirst().getSection())
                 .timeSlot(timeSlotService.getTimeSlot(timeSlotId))
                 .build();
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -120,16 +122,16 @@ public class FacultyController {
             @RequestBody AttendanceSubmissionDTO submissionDTO) {
         log.info("Submitting attendance for time slot: {}", submissionDTO.getTimeSlotId());
         log.info("REQUEST: {}", submissionDTO);
-        
+
         User currentUser = currentUserService.getCurrentUser();
         AttendanceSessionResponseDTO sessionResponse = facultyAttendanceService.submitAttendance(currentUser, submissionDTO);
-        
+
         AttendanceSubmissionResponseDTO response = AttendanceSubmissionResponseDTO.builder()
                 .success(true)
                 .message("Attendance submitted successfully")
                 .attendanceSession(sessionResponse)
                 .build();
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -142,7 +144,7 @@ public class FacultyController {
         List<AssignedSectionDTO> sections = facultyTimetableService.getAssignedSections(currentUser);
         return ResponseEntity.ok(sections);
     }
-    
+
     @GetMapping("/missed-sessions")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('FACULTY')")
     @Operation(summary = "Get missed attendance sessions", description = "Returns all missed attendance sessions for the faculty")
@@ -152,7 +154,7 @@ public class FacultyController {
         List<AttendanceSessionDTO> missedSessions = facultyAttendanceService.getMissedAttendanceSessions(currentUser);
         return ResponseEntity.ok(missedSessions);
     }
-    
+
     @GetMapping("/missed-sessions/date")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('FACULTY')")
     @Operation(summary = "Get missed attendance sessions by date", description = "Returns all missed attendance sessions for the faculty on a specific date")
@@ -163,7 +165,7 @@ public class FacultyController {
         List<AttendanceSessionDTO> missedSessions = facultyAttendanceService.getMissedAttendanceSessionsByDate(currentUser, date);
         return ResponseEntity.ok(missedSessions);
     }
-    
+
     @PostMapping("/late-submission")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('FACULTY')")
     @Operation(summary = "Submit late attendance reason", description = "Submit reason for late attendance submission")

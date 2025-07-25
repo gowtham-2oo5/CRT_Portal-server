@@ -18,9 +18,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.crt.server.exception.AuthenticationException;
 
 import java.util.List;
 import java.util.UUID;
@@ -271,6 +274,19 @@ public class UserServiceImpl implements UserService {
         user.setFirstLogin(isFirstLogin);
         userRepository.save(user);
 
+    }
+
+    @Override
+    public UserDTO getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AuthenticationException("User not authenticated");
+        }
+
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+        return convertToDTO(user);
     }
 
     private UserDTO convertToDTO(User user) {

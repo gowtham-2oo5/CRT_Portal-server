@@ -16,28 +16,29 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+import com.crt.server.security.CookieService;
+
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final CookieService cookieService;
 
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
+        final String jwt = cookieService.getJwtFromCookies(request);
         final String username;
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (jwt == null || jwt.isEmpty()) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
         username = jwtService.extractUsername(jwt);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

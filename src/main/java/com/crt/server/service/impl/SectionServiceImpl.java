@@ -81,9 +81,43 @@ public class SectionServiceImpl implements SectionService {
     @Transactional(readOnly = true)
     public List<SectionDTO> getAllSections() {
         log.debug("Getting all sections");
-        return sectionRepository.findAll().stream()
+        List<SectionDTO> sections = new ArrayList<>( sectionRepository.findAll().stream()
                 .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
+
+        sections.sort((t1, t2) -> {
+            String name1 = t1.getName();
+            String name2 = t2.getName();
+
+            // Extract numbers from the names
+            Integer num1 = extractNumber(name1);
+            Integer num2 = extractNumber(name2);
+
+            // If both have numbers, compare numerically
+            if (num1 != null && num2 != null) {
+                return Integer.compare(num1, num2);
+            }
+
+            // Fallback to alphabetical comparison
+            return name1.compareToIgnoreCase(name2);
+        });
+
+        return sections;
+    }
+    private Integer extractNumber(String str) {
+        if (str == null) return null;
+
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("-(\\d+)");
+        java.util.regex.Matcher matcher = pattern.matcher(str);
+
+        if (matcher.find()) {
+            try {
+                return Integer.parseInt(matcher.group(1));
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     @Override

@@ -51,8 +51,7 @@ public class SecurityConfig {
                                 "/ws-native/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                        .anyRequest().authenticated())
+                        .anyRequest().hasAuthority("ADMIN"))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
