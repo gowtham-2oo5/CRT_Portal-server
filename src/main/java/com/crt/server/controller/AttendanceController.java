@@ -224,9 +224,6 @@ public class AttendanceController {
         return ResponseEntity.ok(attendanceService.getTimeSlotsByDayAndTime(date, startTime, endTime));
     }
 
-    /**
-     * Admin endpoint to override attendance for a specific time slot and date
-     */
     @PostMapping("/admin/override")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<BulkAttendanceResponseDTO> adminOverrideAttendance(
@@ -236,9 +233,6 @@ public class AttendanceController {
         return ResponseEntity.ok(attendanceService.adminOverrideAttendance(requestDTO));
     }
 
-    /**
-     * Get all absentees for a specific date (Admin only)
-     */
     @GetMapping("/absentees")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<AbsenteeDTO>> getAbsenteesByDate(

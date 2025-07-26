@@ -40,7 +40,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/",
                                 "/actuator/**",
-                                "/api/users",
+                                "/api/users/me",
+                                "/api/users/**",
                                 "/api/auth/**",
                                 "/api-docs/**",
                                 "/swagger-ui/**",
@@ -51,7 +52,7 @@ public class SecurityConfig {
                                 "/ws-native/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyRequest().hasAuthority("ADMIN"))
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)

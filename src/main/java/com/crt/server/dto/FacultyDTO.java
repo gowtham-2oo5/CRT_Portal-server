@@ -15,5 +15,6 @@ public class FacultyDTO {
     private String email;
     private String phone;
     private String username;
+    private String empId;
     private String role;
 }

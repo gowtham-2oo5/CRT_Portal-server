@@ -14,13 +14,15 @@ import java.util.UUID;
 @AllArgsConstructor
 public class TimeSlotStatusDTO {
     private Integer timeSlotId;
+    private UUID sectionId;
+    private UUID facultyId;
+    private String facEmpId;
+    private String day;
+    private String sectionName;
+    private String room;
+    private String facultyName;
     private LocalTime startTime;
     private LocalTime endTime;
-    private String day;
-    private UUID sectionId;
-    private String sectionName;
-    private UUID facultyId;
-    private String facultyName;
     private boolean attendancePosted;
     private boolean pastEndTime;
 }

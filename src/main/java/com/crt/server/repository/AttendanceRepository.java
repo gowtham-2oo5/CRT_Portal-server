@@ -1,15 +1,18 @@
 package com.crt.server.repository;
 
 import com.crt.server.dto.AbsenteeDTO;
+import com.crt.server.dto.PendingFacultyResponseDTO;
 import com.crt.server.model.Attendance;
 import com.crt.server.model.AttendanceSession;
 import com.crt.server.model.Student;
 import com.crt.server.model.AttendanceStatus;
 import com.crt.server.model.TimeSlot;
+import org.aspectj.weaver.ast.Literal;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -102,16 +105,15 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
      */
     @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM Attendance a WHERE a.timeSlot = :timeSlot AND CAST(a.date AS LocalDate) = :date")
     boolean existsByTimeSlotAndDate(@Param("timeSlot") TimeSlot timeSlot, @Param("date") LocalDate date);
-    
-    /**
-     * Find faculties who haven't posted attendance for their time slots on a specific date
-     * 
-     * @param date The date
-     * @return List of faculty IDs who haven't posted attendance
-     */
+
     @Query("SELECT DISTINCT ts.inchargeFaculty.id FROM TimeSlot ts WHERE ts.id NOT IN " +
            "(SELECT a.timeSlot.id FROM Attendance a WHERE CAST(a.date AS LocalDate) = :date)")
     List<UUID> findFacultiesWithPendingAttendance(@Param("date") LocalDate date);
+
+//    @Query("SELECT DISTINCT ts FROM TimeSlot ts WHERE ts.id NOT IN " +
+//            "(SELECT a.timeSlot.id FROM Attendance a WHERE CAST(a.date AS LocalDate) = :date)")
+//    List<PendingFacultyResponseDTO> findFacultiesWithPendingAttendance(@Param("date") LocalDate date);
+//
     
     /**
      * Find attendance records by attendance session

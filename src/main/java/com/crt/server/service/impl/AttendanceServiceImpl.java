@@ -670,11 +670,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 archive.getPostedAt(), archive.getDate());
     }
     
-    /**
-     * Updates the attendance percentage for a student based on all their attendance records
-     * 
-     * @param student The student whose attendance percentage needs to be updated
-     */
+
     private void updateStudentAttendancePercentage(Student student) {
         // Calculate attendance from all records
         LocalDateTime endDate = LocalDateTime.now();
@@ -755,30 +751,27 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     @Transactional(readOnly = true)
     public TimeSlotFilterResponseDTO getTimeSlotsByDayAndTime(LocalDate date, LocalTime startTime, LocalTime endTime) {
-        // Since we don't have a direct day field in the entities, we'll get all time slots
-        // and filter them based on the provided parameters
         List<TimeSlot> allTimeSlots = timeSlotRepository.findAll();
         
-        // Filter time slots based on start and end time if provided
         List<TimeSlot> filteredTimeSlots = allTimeSlots.stream()
-                .filter(ts -> {
-                    if (startTime != null && endTime != null) {
-                        LocalTime tsStart = LocalTime.parse(ts.getStartTime());
-                        LocalTime tsEnd = LocalTime.parse(ts.getEndTime());
-                        return !tsStart.isBefore(startTime) && !tsEnd.isAfter(endTime);
-                    }
-                    return true;
-                })
-                .collect(Collectors.toList());
+//                .filter(ts -> {
+//                    if (startTime != null && endTime != null) {
+//                        LocalTime tsStart = LocalTime.parse(ts.getStartTime());
+//                        LocalTime tsEnd = LocalTime.parse(ts.getEndTime());
+//                        return !tsStart.isBefore(startTime) && !tsEnd.isAfter(endTime);
+//                    }
+//                    return true;
+//                })
+                .toList();
         
-        // Convert time slots to DTOs with attendance status
+
         List<TimeSlotStatusDTO> timeSlotStatusDTOs = new ArrayList<>();
         int postedAttendanceCount = 0;
         
         for (TimeSlot timeSlot : filteredTimeSlots) {
             boolean attendancePosted = attendanceRepository.existsByTimeSlotAndDate(timeSlot, date);
             
-            // Check if current time is past the end time of the time slot
+
             boolean pastEndTime = LocalTime.now().isAfter(LocalTime.parse(timeSlot.getEndTime()));
             
             TimeSlotStatusDTO dto = TimeSlotStatusDTO.builder()
@@ -789,7 +782,10 @@ public class AttendanceServiceImpl implements AttendanceService {
                     .sectionId(timeSlot.getSection().getId())
                     .sectionName(timeSlot.getSection().getName())
                     .facultyId(timeSlot.getInchargeFaculty().getId())
+                    .facEmpId(timeSlot.getInchargeFaculty().getEmployeeId())
                     .facultyName(timeSlot.getInchargeFaculty().getName())
+
+                    .room(timeSlot.getRoom().toString())
                     .attendancePosted(attendancePosted)
                     .pastEndTime(pastEndTime)
                     .build();
@@ -825,8 +821,10 @@ public class AttendanceServiceImpl implements AttendanceService {
                             .name(faculty.getName())
                             .email(faculty.getEmail())
                             .phone(faculty.getPhone())
+                            .empId(faculty.getEmployeeId())
+                            .username(faculty.getUsername())
                             .build();
-                    
+
                     facultiesWithPendingAttendance.add(facultyDTO);
                 }
             }
