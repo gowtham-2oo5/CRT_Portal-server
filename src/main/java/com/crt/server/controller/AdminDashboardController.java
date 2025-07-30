@@ -34,7 +34,7 @@ public class AdminDashboardController {
             @RequestParam(defaultValue = "15") int limit) {
         log.info("Recent actions requested with limit: {}", limit);
         
-        // Ensure limit is within reasonable bounds
+
         int actualLimit = Math.min(Math.max(limit, 1), 50);
         
         List<ActivityLogDTO> recentActions = activityLogService.getRecentActivities(actualLimit);

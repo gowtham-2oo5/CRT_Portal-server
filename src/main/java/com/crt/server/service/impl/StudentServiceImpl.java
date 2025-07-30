@@ -93,27 +93,28 @@ public class StudentServiceImpl implements StudentService {
             Student student = studentRepository.findByRegNum(regNum);
             return convertToDTO(student);
         } catch (Exception e) {
-            throw new ResourceNotFoundException("Student not found with registration number: " + regNum);
+            throw new ResourceNotFoundException("Student not found with registration number: %s".formatted(regNum));
         }
     }
 
     @Override
     public List<StudentDTO> getAllStudents() {
         return studentRepository.findAll().stream()
+                .sorted((s1, s2) -> s1.getRegNum().compareToIgnoreCase(s2.getRegNum()))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     public PagedResponseDTO<StudentDTO> getStudentsPaginated(int page, int size, String sortBy, String direction) {
         Sort sort = Sort.by(Sort.Direction.fromString(direction), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        
+
         Page<Student> studentPage = studentRepository.findAll(pageable);
         List<StudentDTO> studentDTOs = studentPage.getContent().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
-        
+
         return PagedResponseDTO.<StudentDTO>builder()
                 .content(studentDTOs)
                 .page(studentPage.getNumber())
@@ -172,7 +173,7 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public List<StudentDTO> bulkCreateStudents(MultipartFile file) throws Exception {
-        String[] headers = {"ID","NAME","EMAIL","BRANCH"};
+        String[] headers = {"ID", "NAME", "EMAIL", "BRANCH"};
 
         try {
             List<Student> students = csvService.parseCsv(file, headers, record -> {
@@ -181,11 +182,11 @@ public class StudentServiceImpl implements StudentService {
                 } catch (Exception e) {
                     System.err.println(e.getLocalizedMessage());
                 }
-                if(studentRepository.existsByRegNum(record.get("ID"))) return null;
-                
+                if (studentRepository.existsByRegNum(record.get("ID"))) return null;
+
                 // Get default section
                 Section defaultSection = getOrCreateDefaultSection();
-                
+
                 return Student.builder()
                         .name(record.get("NAME"))
                         .email(record.get("EMAIL"))
@@ -228,51 +229,51 @@ public class StudentServiceImpl implements StudentService {
 
         return convertToDTO(updatedStudent);
     }
-    
+
     @Override
     public StudentDTO updateStudentSection(UUID studentId, UUID sectionId) {
         log.info("Updating section for student ID: {} to section ID: {}", studentId, sectionId);
-        
+
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
-        
+
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Section not found with id: " + sectionId));
-        
+
         student.setSection(section);
         Student updatedStudent = studentRepository.save(student);
-        
+
         log.info("Updated section for student {} (ID: {}) to section {} (ID: {})",
                 student.getRegNum(), studentId, section.getName(), sectionId);
-        
+
         return convertToDTO(updatedStudent);
     }
-    
+
     @Override
     public StudentDTO updateStudentSectionByRegNumAndSectionName(String regNum, String sectionName) {
         log.info("Updating section for student with reg number: {} to section: {}", regNum, sectionName);
-        
+
         Student student = studentRepository.findByRegNum(regNum);
         if (student == null) {
             throw new ResourceNotFoundException("Student not found with registration number: " + regNum);
         }
-        
+
         Section section = sectionRepository.findByName(sectionName);
         if (section == null) {
             throw new ResourceNotFoundException("Section not found with name: " + sectionName);
         }
-        
+
         student.setSection(section);
         Student updatedStudent = studentRepository.save(student);
-        
+
         log.info("Updated section for student {} to section {} (ID: {})",
                 regNum, sectionName, section.getId());
-        
+
         return convertToDTO(updatedStudent);
     }
 
     private void validateRequiredFields(org.apache.commons.csv.CSVRecord record) throws Exception {
-        String[] requiredFields = {"ID","NAME","EMAIL","BRANCH"};
+        String[] requiredFields = {"ID", "NAME", "EMAIL", "BRANCH"};
         for (String field : requiredFields) {
             if (!record.isSet(field) || record.get(field).trim().isEmpty()) {
                 throw new Exception("Required field '" + field + "' is missing or empty");
@@ -298,9 +299,10 @@ public class StudentServiceImpl implements StudentService {
                 .crtEligibility(student.getCrtEligibility())
                 .feedback(student.getFeedback())
                 .section(student.getSection() != null ? student.getSection().getName() : null)
+                .attendancePercentage(student.getAttendancePercentage())
                 .build();
     }
-    
+
     private Section getOrCreateDefaultSection() {
         List<Section> sections = sectionRepository.findAll();
         if (sections.isEmpty()) {
@@ -310,20 +312,20 @@ public class StudentServiceImpl implements StudentService {
             return sections.getFirst();
         }
     }
-    
+
     @Override
     public List<StudentAttendanceDTO> getStudentsWithAttendance(int days) {
         LocalDateTime endDate = LocalDateTime.now();
         LocalDateTime startDate = endDate.minusDays(days);
-        
+
         List<Student> students = studentRepository.findAll();
         List<StudentAttendanceDTO> result = new ArrayList<>();
-        
+
         for (Student student : students) {
             long totalAttendance = attendanceRepository.countAttendanceByStudentAndDateRange(student, startDate, endDate);
             long presentCount = totalAttendance - attendanceRepository.countAbsencesByStudentAndDateRange(student, startDate, endDate);
             double attendancePercentage = totalAttendance > 0 ? ((double) presentCount / totalAttendance) * 100.0 : 0.0;
-            
+
             StudentAttendanceDTO dto = StudentAttendanceDTO.builder()
                     .id(student.getId().toString())
                     .name(student.getName())
@@ -337,29 +339,29 @@ public class StudentServiceImpl implements StudentService {
                     .presentCount(presentCount)
                     .attendancePercentage(attendancePercentage)
                     .build();
-            
+
             result.add(dto);
         }
-        
+
         return result;
     }
-    
+
     @Override
     public PagedResponseDTO<StudentAttendanceDTO> getStudentsWithAttendancePaginated(int page, int size, String sortBy, String direction, int days) {
         Sort sort = Sort.by(Sort.Direction.fromString(direction), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        
+
         Page<Student> studentPage = studentRepository.findAll(pageable);
         List<StudentAttendanceDTO> studentDTOs = new ArrayList<>();
-        
+
         LocalDateTime endDate = LocalDateTime.now();
         LocalDateTime startDate = endDate.minusDays(days);
-        
+
         for (Student student : studentPage.getContent()) {
             long totalAttendance = attendanceRepository.countAttendanceByStudentAndDateRange(student, startDate, endDate);
             long presentCount = totalAttendance - attendanceRepository.countAbsencesByStudentAndDateRange(student, startDate, endDate);
             double attendancePercentage = totalAttendance > 0 ? ((double) presentCount / totalAttendance) * 100.0 : 0.0;
-            
+
             StudentAttendanceDTO dto = StudentAttendanceDTO.builder()
                     .id(student.getId().toString())
                     .name(student.getName())
@@ -373,10 +375,10 @@ public class StudentServiceImpl implements StudentService {
                     .presentCount(presentCount)
                     .attendancePercentage(attendancePercentage)
                     .build();
-            
+
             studentDTOs.add(dto);
         }
-        
+
         return PagedResponseDTO.<StudentAttendanceDTO>builder()
                 .content(studentDTOs)
                 .page(studentPage.getNumber())
@@ -389,30 +391,15 @@ public class StudentServiceImpl implements StudentService {
                 .hasPrevious(studentPage.hasPrevious())
                 .build();
     }
-    
+
     @Override
     @Transactional
-    public Double updateStudentAttendancePercentage(UUID studentId) {
+    public void updateStudentAttendancePercentage(UUID studentId, Double newAttdReport) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
-        
-        // Calculate attendance from all records
-        LocalDateTime endDate = LocalDateTime.now();
-        LocalDateTime startDate = LocalDateTime.of(2000, 1, 1, 0, 0); // Far in the past to include all records
-        
-        long totalClasses = attendanceRepository.countAttendanceByStudentAndDateRange(student, startDate, endDate);
-        long absences = attendanceRepository.countAbsencesByStudentAndDateRange(student, startDate, endDate);
-        
-        // Calculate attendance percentage
-        double attendancePercentage = totalClasses > 0 ? ((double) (totalClasses - absences) / totalClasses) * 100.0 : 0.0;
-        
-        // Update student's attendance percentage
-        student.setAttendancePercentage(attendancePercentage);
+
+        student.setAttendancePercentage(newAttdReport);
         studentRepository.save(student);
-        
-        log.info("Updated attendance percentage for student {} (ID: {}) to {}%",
-                student.getRegNum(), studentId, attendancePercentage);
-        
-        return attendancePercentage;
+
     }
 }

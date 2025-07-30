@@ -58,7 +58,10 @@ public class User implements UserDetails {
     private boolean isActive = true;
 
     @Column(nullable = false)
-    private String department; // CSE, ME, CE, ECE, EEE
+    private String department;
+
+    @Column(nullable = false)
+    private String designation; // CSE, ME, CE, ECE, EEE
 
     @Column(unique = true)
     private String employeeId; // Faculty employee ID

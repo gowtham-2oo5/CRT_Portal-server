@@ -8,16 +8,8 @@ import com.crt.server.model.User;
 import java.util.List;
 
 public interface ActivityLogService {
-    
-    /**
-     * Log attendance posting activity
-     * 
-     * @param faculty The faculty who posted attendance
-     * @param section The section for which attendance was posted
-     * @param timeSlot The time slot for which attendance was posted
-     * @param attendancePercentage The calculated attendance percentage for the section
-     */
-    void logAttendancePosted(User faculty, Section section, TimeSlot timeSlot, Double attendancePercentage);
+
+    void logAttendancePosted(User faculty, Section section, TimeSlot timeSlot, Integer absentCount);
     
     /**
      * Get recent activity logs

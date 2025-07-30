@@ -1,6 +1,7 @@
 package com.crt.server.service;
 
 import com.crt.server.dto.AccountConfirmationMailDTO;
+
 import java.util.List;
 
 public interface EmailService {
@@ -11,14 +12,6 @@ public interface EmailService {
     void sendLoginOtp(String otp, String mail);
 
     void sendStudentAccountConfirmationMail(String email, AccountConfirmationMailDTO student);
-    
-    /**
-     * Send bulk emails to multiple recipients
-     * 
-     * @param subject The email subject
-     * @param body The email body (HTML content)
-     * @param emailIds List of email addresses to send to
-     * @return Number of emails successfully sent
-     */
+
     int sendBulkEmail(String subject, String body, List<String> emailIds);
 }

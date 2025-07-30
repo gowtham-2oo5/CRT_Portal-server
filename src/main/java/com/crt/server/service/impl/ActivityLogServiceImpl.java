@@ -24,7 +24,7 @@ public class ActivityLogServiceImpl implements ActivityLogService {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     @Override
-    public void logAttendancePosted(User faculty, Section section, TimeSlot timeSlot, Double attendancePercentage) {
+    public void logAttendancePosted(User faculty, Section section, TimeSlot timeSlot, Integer absentCount) {
         lock.writeLock().lock();
         try {
             String timeSlotInfo = String.format("%s-%s", 
@@ -32,28 +32,28 @@ public class ActivityLogServiceImpl implements ActivityLogService {
                 timeSlot.getEndTime()
             );
             
-            String action = String.format("%s - %s posted attendance for %s for %s and %.1f%%",
+            String action = String.format("%s - %s posted attendance for %s for %s and %d were absent%%",
                 faculty.getUsername(),
                 faculty.getName(),
                 section.getName(),
                 timeSlotInfo,
-                attendancePercentage
+                absentCount
             );
 
             ActivityLogDTO logEntry = ActivityLogDTO.builder()
                     .action(action)
                     .timestamp(LocalDateTime.now())
-                    .facultyId(faculty.getUsername())
+                    .facultyId(faculty.getName())
                     .facultyName(faculty.getName())
                     .sectionName(section.getName())
                     .timeSlotInfo(timeSlotInfo)
-                    .attendancePercentage(attendancePercentage)
+                    .absentCount(absentCount)
                     .build();
 
-            // Add to the beginning of the list (most recent first)
+
             activityLogs.addFirst(logEntry);
 
-            // Remove oldest entries if we exceed the maximum size
+
             while (activityLogs.size() > MAX_LOG_SIZE) {
                 activityLogs.removeLast();
             }

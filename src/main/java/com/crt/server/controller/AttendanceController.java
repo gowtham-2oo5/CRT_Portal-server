@@ -142,6 +142,7 @@ public class AttendanceController {
         }
     }
 
+
     @GetMapping("/section/{sectionId}")
     public ResponseEntity<List<SectionAttendanceRecordDTO>> getSectionAttendanceRecords(
             @PathVariable UUID sectionId,
@@ -223,6 +224,19 @@ public class AttendanceController {
         log.info("Filtering time slots for date: {}, startTime: {}, endTime: {}", date, startTime, endTime);
         return ResponseEntity.ok(attendanceService.getTimeSlotsByDayAndTime(date, startTime, endTime));
     }
+
+    @GetMapping("/time-slots/pending")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'FACULTY')")
+    public ResponseEntity<List<TimeSlotDTO>> getPendingTimeSlotsByDayAndTime(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime) {
+        log.info("Filtering time slots for date: {}, startTime: {}, endTime: {}", date, startTime, endTime);
+
+        return ResponseEntity.ok(attendanceService.getPendingAttendanceTimeSlots(date, startTime, endTime));
+    }
+
+
 
     @PostMapping("/admin/override")
     @PreAuthorize("hasAuthority('ADMIN')")

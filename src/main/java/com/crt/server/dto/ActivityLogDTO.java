@@ -16,10 +16,9 @@ public class ActivityLogDTO {
     private String action;
     private LocalDateTime timestamp;
     
-    // For easier frontend consumption
     private String facultyId;
     private String facultyName;
     private String sectionName;
     private String timeSlotInfo;
-    private Double attendancePercentage;
+    private Integer absentCount;
 }

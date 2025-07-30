@@ -5,6 +5,7 @@ import com.crt.server.dto.*;
 import com.crt.server.model.*;
 import com.crt.server.repository.*;
 import com.crt.server.service.AttendanceService;
+import com.crt.server.service.StudentService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,16 +49,18 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Autowired
     private SectionScheduleRepository sectionScheduleRepository;
-    
+
     @Autowired
     private AttendanceConfig attendanceConfig;
+    @Autowired
+    private StudentService studentService;
 
     @Override
     @Transactional
     public List<AttendanceDTO> markAttendance(MarkAttendanceDTO markAttendanceDTO) {
         System.out.println("[DEBUG] Starting markAttendance with DTO: " + markAttendanceDTO);
 
-        // Parse the date string properly
+
         System.out.println("[DEBUG] Raw date string: '" + markAttendanceDTO.getDateTime() + "'");
         String rawDateTime = markAttendanceDTO.getDateTime().trim();
         String normalizedDateTime = rawDateTime.substring(0, rawDateTime.length() - 2) +
@@ -119,7 +122,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         System.out.println("[DEBUG] Checking for existing attendance");
         List<Attendance> existingAttendance = attendanceRepository.findByTimeSlotAndDate(timeSlot, date);
         boolean isAdmin = true;//markAttendanceDTO.isAdminRequest() != null && markAttendanceDTO.isAdminRequest();
-        
+
         if (!existingAttendance.isEmpty()) {
             if (isAdmin) {
                 // For admin requests, delete existing attendance records to allow update
@@ -190,7 +193,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         System.out.println("[DEBUG] About to save " + attendances.size() + " attendance records");
         List<Attendance> savedAttendances = attendanceRepository.saveAll(attendances);
         System.out.println("[DEBUG] Successfully saved " + savedAttendances.size() + " attendance records");
-        
+
         // Update attendance percentage for each student
         for (Student student : students) {
             updateStudentAttendancePercentage(student);
@@ -218,7 +221,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             // Check if attendance already exists and if this is an admin request
             boolean isAdmin = bulkAttendanceDTO.getIsAdminRequest() != null && bulkAttendanceDTO.getIsAdminRequest();
             List<Attendance> existingAttendance = attendanceRepository.findByTimeSlotAndDate(timeSlot, bulkAttendanceDTO.getParsedDateTime());
-            
+
             if (!existingAttendance.isEmpty()) {
                 if (isAdmin) {
                     // For admin requests, delete existing attendance records to allow update
@@ -276,7 +279,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 successfulRecords.addAll(savedAbsentAttendances.stream().map(this::convertToDTO)
                         .collect(Collectors.toList()));
                 successCount.addAndGet(savedAbsentAttendances.size());
-                
+
                 // Update attendance percentage for each student
                 savedAbsentAttendances.stream()
                     .map(Attendance::getStudent)
@@ -337,7 +340,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 successfulRecords.addAll(savedLateAttendances.stream().map(this::convertToDTO)
                         .collect(Collectors.toList()));
                 successCount.addAndGet(savedLateAttendances.size());
-                
+
                 // Update attendance percentage for each student
                 savedLateAttendances.stream()
                     .map(Attendance::getStudent)
@@ -370,11 +373,11 @@ public class AttendanceServiceImpl implements AttendanceService {
                     .orElseThrow(() -> new EntityNotFoundException("Time slot not found"));
             Section section = sectionRepository.findById(timeSlot.getSection().getId())
                     .orElseThrow(() -> new EntityNotFoundException("Section not found"));
-                    
+
             // Check if attendance already exists and if this is an admin request
             LocalDateTime parsedDateTime = LocalDateTime.parse(dateTime);
             List<Attendance> existingAttendance = attendanceRepository.findByTimeSlotAndDate(timeSlot, parsedDateTime);
-            
+
             if (!existingAttendance.isEmpty()) {
                 if (isAdminRequest != null && isAdminRequest) {
                     // For admin requests, delete existing attendance records to allow update
@@ -465,7 +468,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 UUID studentId = record.getStudentId();
                 studentRepository.findById(studentId).ifPresent(affectedStudents::add);
             });
-            
+
             affectedStudents.forEach(this::updateStudentAttendancePercentage);
 
             return BulkAttendanceResponseDTO.builder().totalProcessed(totalProcessed)
@@ -482,19 +485,19 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (!attendanceConfig.isEnforceEndTimeRestriction()) {
             return true;
         }
-        
+
         // Check if the current time is after the end time of the time slot
         LocalDateTime now = LocalDateTime.now();
         LocalTime endTime = LocalTime.parse(timeSlot.getEndTime());
         LocalTime currentTime = now.toLocalTime();
-        
+
         // If current time is after end time, attendance submission is not allowed
         if (currentTime.isAfter(endTime)) {
-            log.warn("Attendance submission attempted after end time. Current time: {}, End time: {}", 
+            log.warn("Attendance submission attempted after end time. Current time: {}, End time: {}",
                     currentTime, endTime);
             return false;
         }
-        
+
         return true;
     }
 
@@ -552,39 +555,39 @@ public class AttendanceServiceImpl implements AttendanceService {
         int batchSize = 1000;
         int page = 0;
         long totalRecords = attendanceRepository.countByDateBetween(startDate, endDate);
-        
+
         log.info("Starting archival process for {}/{} - Total records to archive: {}", year, month, totalRecords);
-        
+
         if (totalRecords == 0) {
             log.info("No records found to archive for {}/{}", year, month);
             return;
         }
-        
+
         long processedRecords = 0;
-        
+
         while (processedRecords < totalRecords) {
             Pageable pageable = PageRequest.of(page, batchSize);
             List<Attendance> recordsToArchive = attendanceRepository.findByDateBetweenOrderById(startDate, endDate, pageable);
-            
+
             if (recordsToArchive.isEmpty()) {
                 break;
             }
-            
+
             // Convert to archive records
             List<AttendanceArchive> archives = recordsToArchive.stream()
                     .map(this::convertToArchive)
                     .collect(Collectors.toList());
-            
+
             // Save archives and delete original records in the same transaction
             attendanceArchiveRepository.saveAll(archives);
             attendanceRepository.deleteAll(recordsToArchive);
-            
+
             processedRecords += recordsToArchive.size();
             page++;
-            
+
             log.info("Archived batch {} - Progress: {}/{} records", page, processedRecords, totalRecords);
         }
-        
+
         log.info("Completed archival process for {}/{} - Total archived: {} records", year, month, processedRecords);
     }
 
@@ -627,10 +630,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new EntityNotFoundException("Section not found"));
 
-        // FIX 14: Create defensive copy to avoid ConcurrentModificationException
         List<Student> students = new ArrayList<>(section.getStudents());
         List<SectionAttendanceRecordDTO> records = new ArrayList<>();
-        String monthTitle = startDate.getMonth().toString() + " " + startDate.getYear();
+        String monthTitle = "%s %d".formatted(startDate.getMonth().toString(), startDate.getYear());
 
         for (Student student : students) {
             long totalClasses = attendanceRepository.countAttendanceByStudentAndDateRange(student,
@@ -640,7 +642,6 @@ public class AttendanceServiceImpl implements AttendanceService {
             double attendancePercentage = totalClasses > 0
                     ? ((totalClasses - absences) * 100.0) / totalClasses
                     : 100.0;
-
             records.add(SectionAttendanceRecordDTO.builder().regNum(student.getRegNum())
                     .name(student.getName()).attendancePercentage(attendancePercentage)
                     .monthTitle(monthTitle).totalClasses(totalClasses).absences(absences).build());
@@ -669,23 +670,23 @@ public class AttendanceServiceImpl implements AttendanceService {
                         .feedback(archive.getFeedback()).build(),
                 archive.getPostedAt(), archive.getDate());
     }
-    
+
 
     private void updateStudentAttendancePercentage(Student student) {
         // Calculate attendance from all records
         LocalDateTime endDate = LocalDateTime.now();
         LocalDateTime startDate = LocalDateTime.of(2000, 1, 1, 0, 0); // Far in the past to include all records
-        
+
         long totalClasses = attendanceRepository.countAttendanceByStudentAndDateRange(student, startDate, endDate);
         long absences = attendanceRepository.countAbsencesByStudentAndDateRange(student, startDate, endDate);
-        
+
         // Calculate attendance percentage
         double attendancePercentage = totalClasses > 0 ? ((totalClasses - absences) * 100.0) / totalClasses : 0.0;
-        
+
         // Update student's attendance percentage
         student.setAttendancePercentage(attendancePercentage);
         studentRepository.save(student);
-        
+
         log.info("Updated attendance percentage for student {} (ID: {}) to {}%",
                 student.getRegNum(), student.getId(), attendancePercentage);
     }
@@ -747,33 +748,33 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .date(attendance.getDate())
                 .build();
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public TimeSlotFilterResponseDTO getTimeSlotsByDayAndTime(LocalDate date, LocalTime startTime, LocalTime endTime) {
         List<TimeSlot> allTimeSlots = timeSlotRepository.findAll();
-        
+
         List<TimeSlot> filteredTimeSlots = allTimeSlots.stream()
-//                .filter(ts -> {
-//                    if (startTime != null && endTime != null) {
-//                        LocalTime tsStart = LocalTime.parse(ts.getStartTime());
-//                        LocalTime tsEnd = LocalTime.parse(ts.getEndTime());
-//                        return !tsStart.isBefore(startTime) && !tsEnd.isAfter(endTime);
-//                    }
-//                    return true;
-//                })
+                .filter(ts -> {
+                    if (startTime != null && endTime != null) {
+                        LocalTime tsStart = LocalTime.parse(ts.getStartTime());
+                        LocalTime tsEnd = LocalTime.parse(ts.getEndTime());
+                        return !tsStart.isBefore(startTime) && !tsEnd.isAfter(endTime);
+                    }
+                    return true;
+                })
                 .toList();
-        
+
 
         List<TimeSlotStatusDTO> timeSlotStatusDTOs = new ArrayList<>();
         int postedAttendanceCount = 0;
-        
+
         for (TimeSlot timeSlot : filteredTimeSlots) {
             boolean attendancePosted = attendanceRepository.existsByTimeSlotAndDate(timeSlot, date);
-            
+
 
             boolean pastEndTime = LocalTime.now().isAfter(LocalTime.parse(timeSlot.getEndTime()));
-            
+
             TimeSlotStatusDTO dto = TimeSlotStatusDTO.builder()
                     .timeSlotId(timeSlot.getId())
                     .startTime(LocalTime.parse(timeSlot.getStartTime()))
@@ -789,24 +790,24 @@ public class AttendanceServiceImpl implements AttendanceService {
                     .attendancePosted(attendancePosted)
                     .pastEndTime(pastEndTime)
                     .build();
-            
+
             timeSlotStatusDTOs.add(dto);
-            
+
             if (attendancePosted) {
                 postedAttendanceCount++;
             }
         }
-        
-        // Get faculties who haven't posted attendance after end time
+
+
         List<UUID> facultyIdsWithPendingAttendance = attendanceRepository.findFacultiesWithPendingAttendance(date);
         List<FacultyDTO> facultiesWithPendingAttendance = new ArrayList<>();
-        
+
         // Filter to only include faculties whose time slots have ended
         for (UUID facultyId : facultyIdsWithPendingAttendance) {
             // Check if any of their time slots have ended but attendance not posted
             boolean hasPastEndTimeSlots = timeSlotStatusDTOs.stream()
                     .anyMatch(ts -> ts.getFacultyId().equals(facultyId) && ts.isPastEndTime() && !ts.isAttendancePosted());
-            
+
             if (hasPastEndTimeSlots) {
                 // Get faculty details and add to the list
                 User faculty = filteredTimeSlots.stream()
@@ -814,7 +815,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                         .findFirst()
                         .map(TimeSlot::getInchargeFaculty)
                         .orElse(null);
-                
+
                 if (faculty != null) {
                     FacultyDTO facultyDTO = FacultyDTO.builder()
                             .id(faculty.getId().toString())
@@ -829,7 +830,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 }
             }
         }
-        
+
         return TimeSlotFilterResponseDTO.builder()
                 .totalTimeSlots(filteredTimeSlots.size())
                 .postedAttendanceCount(postedAttendanceCount)
@@ -899,12 +900,12 @@ public class AttendanceServiceImpl implements AttendanceService {
         // 5. Update attendance percentage for all affected students
         allStudentsInSection.forEach(this::updateStudentAttendancePercentage);
         log.info("Updated attendance percentages for all students in section {}.", section.getName());
-        
+
         // 6. Convert saved attendances to DTOs for response
         List<AttendanceDTO> attendanceDTOs = savedAttendances.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
-        
+
         // 7. Build and return response
         return BulkAttendanceResponseDTO.builder()
                 .totalProcessed(savedAttendances.size())
@@ -914,40 +915,68 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .errors(new ArrayList<>())
                 .build();
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public List<AttendanceDTO> debugGetAllAttendanceForTimeSlotAndDate(Integer timeSlotId, LocalDateTime date) {
         log.info("DEBUG: Getting all attendance records for timeSlotId: {} on date: {}", timeSlotId, date);
-        
+
         TimeSlot timeSlot = timeSlotRepository.findById(timeSlotId)
                 .orElseThrow(() -> new EntityNotFoundException("TimeSlot not found with id: " + timeSlotId));
-        
+
         log.info("DEBUG: Found timeSlot: {} for section: {}", timeSlot.getId(), timeSlot.getSection().getName());
-        
+
         // Get all attendance records for this time slot and date (using DATE comparison)
         List<Attendance> allAttendance = attendanceRepository.findByTimeSlotIdAndDateDebug(timeSlotId, date);
-        
+
         log.info("DEBUG: Found {} total attendance records", allAttendance.size());
-        
+
         // Log each record for debugging
         allAttendance.forEach(attendance -> {
-            log.info("DEBUG: Attendance - Student: {}, Status: {}, Date: {}, TimeSlot: {}", 
-                    attendance.getStudent().getRegNum(), 
-                    attendance.getStatus(), 
+            log.info("DEBUG: Attendance - Student: {}, Status: {}, Date: {}, TimeSlot: {}",
+                    attendance.getStudent().getRegNum(),
+                    attendance.getStatus(),
                     attendance.getDate(),
                     attendance.getTimeSlot().getId());
         });
-        
+
         // Filter and log absentees specifically
         List<Attendance> absentees = allAttendance.stream()
                 .filter(a -> a.getStatus() == AttendanceStatus.ABSENT)
-                .collect(Collectors.toList());
-        
+                .toList();
+
         log.info("DEBUG: Found {} absentees out of {} total records", absentees.size(), allAttendance.size());
-        
+
         return allAttendance.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TimeSlotDTO> getPendingAttendanceTimeSlots(LocalDate date,  LocalTime startTime, LocalTime endTime) {
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalTime currentTime = now.toLocalTime();
+
+        log.info("Getting pending attendance time slots for current time: {}", currentTime);
+
+        return attendanceRepository.findPendingTimeSlotsForAttendance(now, currentTime).stream()
+                .map(this::mapTotimeSlotDTO)
+                .collect(Collectors.toList());
+    }
+
+    private TimeSlotDTO mapTotimeSlotDTO(TimeSlot timeSlot) {
+        return TimeSlotDTO.builder()
+                .inchargeFacultyId(timeSlot.getInchargeFaculty().getId())
+                .inchargeFacultyName(timeSlot.getInchargeFaculty().getName())
+                .inchargeFacultyEmail(timeSlot.getInchargeFaculty().getEmail())
+                .inchargeFacultyPhone(timeSlot.getInchargeFaculty().getPhone())
+                .roomName(timeSlot.getRoom().toString())
+                .sectionId(timeSlot.getSection().getId())
+                .sectionName(timeSlot.getSection().getName())
+                .startTime(timeSlot.getStartTime())
+                .endTime(timeSlot.getEndTime())
+                .roomId(timeSlot.getRoom().getId())
+                .build();
     }
 }

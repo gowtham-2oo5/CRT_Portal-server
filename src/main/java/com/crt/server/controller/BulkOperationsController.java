@@ -1,34 +1,29 @@
 package com.crt.server.controller;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import com.crt.server.dto.RoomDTO;
-import com.crt.server.dto.SectionDTO;
-import com.crt.server.dto.StudentDTO;
-import com.crt.server.dto.TrainingDTO;
+import com.crt.server.dto.*;
 import com.crt.server.exception.ErrorResponse;
-import com.crt.server.model.Student;
 import com.crt.server.service.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.UserDatabase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import com.crt.server.dto.faculty.BulkFacultyRequestDTO;
-import com.crt.server.dto.faculty.BulkFacultyResponseDTO;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/bulk")
 @Slf4j
 public class BulkOperationsController {
 
-    @Autowired
-    private BulkOperationsService bulkOperationsService;
 
     @Autowired
     private StudentService studentService;
@@ -44,6 +39,9 @@ public class BulkOperationsController {
 
     @Autowired
     private AttendanceService attendanceService;
+
+    @Autowired
+    private UserService userService;
 
     @PostMapping(value = "/students/upload", consumes = "multipart/form-data")
     public ResponseEntity<?> bulkUploadStudents(@RequestParam("file") MultipartFile file) {
@@ -161,19 +159,12 @@ public class BulkOperationsController {
                     .body(error);
         }
     }
-    
-    /**
-     * Add multiple faculty members in a single request
-     * 
-     * @param request The bulk faculty request containing multiple faculty details
-     * @return Response with results of the bulk operation
-     */
-    @PostMapping("/faculties")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BulkFacultyResponseDTO> addBulkFaculties(
-            @RequestBody BulkFacultyRequestDTO request) {
-        
-        BulkFacultyResponseDTO response = bulkOperationsService.addBulkFaculties(request);
-        return ResponseEntity.ok(response);
+
+    @PostMapping(value = "/faculties", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> addBulkFaculties(
+            @RequestParam("file") MultipartFile file) throws Exception {
+        List<UserDTO> response = userService.bulkUploadFacs(file);
+        return ResponseEntity.ok("Processed" + response.size() + " Faculties");
     }
 }

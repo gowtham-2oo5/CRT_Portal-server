@@ -17,7 +17,7 @@ public class AttendanceSubmissionDTO {
     private String topicTaught;
     private String date;
     private List<StudentAttendanceRecordDTO> attendanceRecords;
-    
+
     @Data
     @Builder
     @NoArgsConstructor
@@ -27,6 +27,6 @@ public class AttendanceSubmissionDTO {
         private String rollNumber;
         private String name;
         private boolean isPresent;
-        private String feedback; // Optional feedback for the student
+        private String feedback;
     }
 }

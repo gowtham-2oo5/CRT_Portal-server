@@ -3,16 +3,18 @@ package com.crt.server.service.impl;
 import com.crt.server.dto.AuthResponseDTO;
 import com.crt.server.dto.PagedResponseDTO;
 import com.crt.server.dto.UserDTO;
+import com.crt.server.exception.AuthenticationException;
 import com.crt.server.exception.ResourceNotFoundException;
-import com.crt.server.model.Branch;
 import com.crt.server.model.Role;
 import com.crt.server.model.User;
 import com.crt.server.repository.UserRepository;
+import com.crt.server.service.CsvService;
 import com.crt.server.service.EmailService;
 import com.crt.server.service.UserService;
 import com.crt.server.util.PasswordGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,9 +25,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.crt.server.exception.AuthenticationException;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -43,12 +46,13 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private CsvService csvService;
 
     @Override
     public UserDTO createUser(UserDTO createUserDTO) {
         log.info("Creating user with username: {} and email: {}", createUserDTO.getUsername(), createUserDTO.getEmail());
 
-        // Validate input
         if (createUserDTO.getUsername() == null || createUserDTO.getUsername().trim().isEmpty()) {
             throw new RuntimeException("Username cannot be null or empty");
         }
@@ -56,7 +60,6 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Email cannot be null or empty");
         }
 
-        // Trim whitespace
         String username = createUserDTO.getUsername().trim();
         String email = createUserDTO.getEmail().trim().toLowerCase();
 
@@ -78,7 +81,7 @@ public class UserServiceImpl implements UserService {
 
         String generatedPassword = PasswordGenerator.generatePassword();
         log.info("Generated password for user: {}", username);
-        
+
         User user = User.builder()
                 .name(createUserDTO.getName())
                 .email(email)
@@ -87,11 +90,12 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(generatedPassword))
                 .employeeId(createUserDTO.getEmployeeId())
                 .role(createUserDTO.getRole())
+                .designation(createUserDTO.getDesignation())
                 .department(createUserDTO.getDepartment())
                 .isFirstLogin(true)
                 .isActive(createUserDTO.getIsActive() != null ? createUserDTO.getIsActive() : true)
                 .build();
-        
+
         log.info("Created user with branch: {}", user.getDepartment());
 
         log.info("About to save user: {}", user.getUsername());
@@ -112,7 +116,7 @@ public class UserServiceImpl implements UserService {
             }
 
             return convertToDTO(savedUser);
-            
+
         } catch (Exception e) {
             log.error("Failed to save user: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create user: " + e.getMessage());
@@ -152,17 +156,17 @@ public class UserServiceImpl implements UserService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     public PagedResponseDTO<UserDTO> getUsersPaginated(int page, int size, String sortBy, String direction) {
         Sort sort = Sort.by(Sort.Direction.fromString(direction), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        
+
         Page<User> userPage = userRepository.findAll(pageable);
         List<UserDTO> userDTOs = userPage.getContent().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
-        
+
         return PagedResponseDTO.<UserDTO>builder()
                 .content(userDTOs)
                 .page(userPage.getNumber())
@@ -289,6 +293,74 @@ public class UserServiceImpl implements UserService {
         return convertToDTO(user);
     }
 
+    @Override
+    public List<UserDTO> bulkUploadFacs(MultipartFile file) throws Exception {
+        String[] headers = {"Empl Id", "Employee Name", "Designation", "DEPT", "KLU Mail Id's", "Contact No"};
+
+        try {
+
+            List<UserDTO> facs = csvService.parseCsv(file, headers, record -> {
+                try {
+                    validateReqFields(record);
+                } catch (Exception e) {
+                    log.error(e.getLocalizedMessage());
+                }
+                if (userRepository.existsByEmail(record.get("KLU Mail Id's"))) return null;
+                return UserDTO.builder()
+                        .name(record.get("Employee Name"))
+                        .email(record.get("KLU Mail Id's"))
+                        .username(record.get("KLU Mail Id's").split("@")[0])
+                        .employeeId(record.get("Empl Id"))
+                        .designation(record.get("Designation"))
+                        .phone(record.get("Contact No"))
+                        .department(record.get("DEPT"))
+                        .role(Role.FACULTY)
+                        .isActive(true)
+                        .build();
+            }).stream().filter(Objects::nonNull).collect(Collectors.toList());
+
+            log.info("Found {} faculties in CSV file", facs.size());
+            log.info(createUsers(facs));
+            return facs;
+
+        } catch (Exception e) {
+            log.error("Error in bulk Faculty creation: {}", e.getMessage());
+            throw new Exception("Error processing Faculty data: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public String createUsers(List<UserDTO> facs) {
+        int count = 0;
+        for(UserDTO fac : facs) {
+            try{
+                System.out.printf("Processing faculty: %s%n", fac.toString());
+                fac.setId(createUser(fac).getId());
+                String msg = "Created user with ID: {} for faculty: {}";
+                System.out.printf((msg) + "%n", fac.getId(), fac.getEmployeeId());
+                count++;
+            } catch (Exception e) {
+                log.error("Error in creating Faculty: {} for ID {}", e.getMessage(), fac.getEmployeeId());
+            }
+        }
+        return STR."Processed \{count} faculties out of \{facs.size()} faculties";
+    }
+
+    private void validateReqFields(CSVRecord record) throws Exception {
+        String[] requiredFields = {"Empl Id", "Employee Name", "Designation", "DEPT", "KLU Mail Id's", "Contact No"};
+        for (String field : requiredFields) {
+            if (!record.isSet(field) || record.get(field).trim().isEmpty()) {
+                throw new Exception("Required field '" + field + "' is missing or empty");
+            }
+        }
+
+        // Validate email format
+        String email = record.get("EMAIL");
+        if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new Exception("Invalid email format for: " + email);
+        }
+    }
+
     private UserDTO convertToDTO(User user) {
         return UserDTO.builder()
                 .id(user.getId())
@@ -296,7 +368,7 @@ public class UserServiceImpl implements UserService {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .username(user.getUsername())
-                .department(user.getDepartment() )
+                .department(user.getDepartment())
                 .role(user.getRole())
                 .isFirstLogin(user.isFirstLogin())
                 .employeeId(user.getEmployeeId())

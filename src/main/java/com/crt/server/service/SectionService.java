@@ -4,7 +4,6 @@ import com.crt.server.dto.CreateSectionDTO;
 import com.crt.server.dto.SectionDTO;
 import com.crt.server.dto.StudentDTO;
 import com.crt.server.model.Section;
-import com.crt.server.model.Training;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,15 +32,11 @@ public interface SectionService {
 
     SectionDTO updateStudentSection(UUID studentId, UUID sectionId);
 
-    @Transactional(readOnly = true)
-    @Cacheable(value = "studentsBySection", key = "#sectionId")
     List<StudentDTO> getStudentsBySection(UUID sectionId);
 
-    //    List<TrainingDTO> bulkCreateTrainings(MultipartFile file) throws Exception;
     List<SectionDTO> bulkCreateSections(MultipartFile file) throws Exception;
 
     Section getSectionByName(String name);
-
 
 
 }

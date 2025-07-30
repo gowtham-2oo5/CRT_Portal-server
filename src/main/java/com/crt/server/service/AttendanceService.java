@@ -25,62 +25,26 @@ public interface AttendanceService {
     List<AttendanceDTO> getArchivedStudentAttendance(UUID studentId, LocalDateTime startDate, LocalDateTime endDate);
 
     AttendanceReportDTO getArchivedStudentAttendanceReport(UUID studentId, LocalDateTime startDate,
-            LocalDateTime endDate);
+                                                           LocalDateTime endDate);
 
     List<SectionAttendanceRecordDTO> getSectionAttendanceRecords(UUID sectionId, LocalDateTime startDate,
-            LocalDateTime endDate);
+                                                                 LocalDateTime endDate);
 
-    /**
-     * Process a CSV file containing bulk attendance data
-     * 
-     * @param file           The CSV file
-     * @param timeSlotId     The time slot ID
-     * @param dateTime       The date and time of the attendance
-     * @param isAdminRequest Flag indicating if the request is from an admin (allows updating existing attendance)
-     * @return Response containing success and failure information
-     */
     BulkAttendanceResponseDTO processBulkAttendanceFile(MultipartFile file, Integer timeSlotId, String dateTime, Boolean isAdminRequest);
-    
-    /**
-     * Get all absentees for a specific date across all sections
-     * 
-     * @param date The date to check for absentees
-     * @return List of absentee DTOs
-     */
+
     List<AbsenteeDTO> getAbsenteesByDate(LocalDate date);
-    
-    /**
-     * Get all absentees for a specific date in a specific section
-     * 
-     * @param date      The date to check for absentees
-     * @param sectionId The section ID
-     * @return List of absentee DTOs
-     */
+
     List<AbsenteeDTO> getAbsenteesByDateAndSection(LocalDate date, UUID sectionId);
 
     List<AbsenteeDTO> getAbsenteesByTimeSlotId(Integer timeSlotId);
-    
-    /**
-     * Get time slots filtered by day, start time, and end time
-     * 
-     * @param date The date to filter by
-     * @param startTime Optional start time to filter by (can be null)
-     * @param endTime Optional end time to filter by (can be null)
-     * @return Response containing time slot status information
-     */
+
     TimeSlotFilterResponseDTO getTimeSlotsByDayAndTime(LocalDate date, LocalTime startTime, LocalTime endTime);
 
     BulkAttendanceResponseDTO adminOverrideAttendance(AdminAttendanceRequestDTO requestDTO);
 
     List<AbsenteeDTO> getAbsenteesByTimeSlotIdAndDate(Integer timeSlotId, LocalDateTime date);
-    
-    /**
-     * Debug method to get all attendance records for a time slot on a specific date
-     * This helps troubleshoot why absentees might not be showing up
-     * 
-     * @param timeSlotId The time slot ID
-     * @param date The date to check
-     * @return List of all attendance records (not just absentees)
-     */
+
     List<AttendanceDTO> debugGetAllAttendanceForTimeSlotAndDate(Integer timeSlotId, LocalDateTime date);
+
+    List<TimeSlotDTO> getPendingAttendanceTimeSlots(LocalDate date, LocalTime startTime, LocalTime endTime);
 }

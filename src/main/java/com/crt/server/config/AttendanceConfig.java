@@ -8,8 +8,5 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "attendance")
 @Data
 public class AttendanceConfig {
-    /**
-     * Flag to control whether attendance can be submitted after the end time of a time slot
-     */
     private boolean enforceEndTimeRestriction = true;
 }

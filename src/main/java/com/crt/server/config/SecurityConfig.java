@@ -36,7 +36,6 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
                         .requestMatchers(
                                 "/",
                                 "/actuator/**",
@@ -59,8 +58,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
-                        .xssProtection(xss -> {
-                        })
+//                        .xssProtection(HeadersConfigurer.XXssConfig::disable)
                         .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'")));
 
         return http.build();
@@ -69,30 +67,28 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        // Allow multiple origins
+
+
         configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:3000", 
-            "http://localhost:3001",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:3001",
-            "https://localhost:3000",
-            "https://localhost:3001"
+                "http://localhost:3000",
+                "http://localhost:3001",
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:3001",
+                "https://localhost:3000",
+                "https://localhost:3001"
         ));
-        
-        // Allow all HTTP methods
+
+
         configuration.setAllowedMethods(Arrays.asList(
-            "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"
         ));
-        
-        // Allow all headers
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        
-        // Expose headers
+
+        configuration.setAllowedHeaders(List.of("*"));
+
         configuration.setExposedHeaders(Arrays.asList(
-            "Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"
+                "Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"
         ));
-        
+
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

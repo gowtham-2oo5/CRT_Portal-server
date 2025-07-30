@@ -1,8 +1,8 @@
 package com.crt.server.dto;
 
-import java.util.UUID;
-
 import lombok.*;
+
+import java.util.UUID;
 
 @Data
 @Builder
@@ -10,15 +10,22 @@ import lombok.*;
 @AllArgsConstructor
 @ToString
 public class TimeSlotDTO {
+
     private Integer id;
+
+    private UUID inchargeFacultyId;
+    private UUID sectionId;
+    private UUID roomId;
+
     private String startTime;
     private String endTime;
-    private Boolean isBreak;
     private String breakDescription;
-    private UUID inchargeFacultyId;
+
     private String inchargeFacultyName;
-    private UUID sectionId;
+    private String inchargeFacultyEmail;
+    private String inchargeFacultyPhone;
+
     private String sectionName;
-    private UUID roomId;
     private String roomName;
+    private Boolean isBreak;
 }

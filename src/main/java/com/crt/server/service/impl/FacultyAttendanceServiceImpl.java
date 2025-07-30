@@ -1,14 +1,12 @@
 package com.crt.server.service.impl;
 
-import com.crt.server.dto.AttendanceSessionDTO;
-import com.crt.server.dto.AttendanceSessionResponseDTO;
-import com.crt.server.dto.AttendanceSubmissionDTO;
-import com.crt.server.dto.LateSubmissionDTO;
-import com.crt.server.dto.StudentDTO;
+import com.crt.server.dto.*;
 import com.crt.server.exception.ResourceNotFoundException;
 import com.crt.server.model.*;
 import com.crt.server.repository.*;
+import com.crt.server.service.ActivityLogService;
 import com.crt.server.service.FacultyAttendanceService;
+import com.crt.server.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -32,13 +30,14 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
     private final TimeSlotRepository timeSlotRepository;
     private final SectionRepository sectionRepository;
     private final StudentRepository studentRepository;
+    private final StudentService studentService;
+    private final ActivityLogService activityLogService;
 
     @Override
     @Transactional
     public AttendanceSessionResponseDTO submitAttendance(User faculty, AttendanceSubmissionDTO submissionDTO) {
         log.info("Submitting attendance for faculty: {} on date: {}", faculty.getUsername(), submissionDTO.getDate());
 
-        // Validate inputs
         TimeSlot timeSlot = timeSlotRepository.findById(Integer.valueOf(submissionDTO.getTimeSlotId()))
                 .orElseThrow(() -> new ResourceNotFoundException("TimeSlot not found"));
 
@@ -47,53 +46,46 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
 
         LocalDate date = LocalDate.parse(submissionDTO.getDate());
 
-        // Validate faculty can submit attendance
-//        if (!canSubmitAttendance(faculty, timeSlot, submissionDTO.getDate())) {
-//            throw new IllegalStateException("Faculty cannot submit attendance for this time slot");
-//        }
+        if (faculty.getRole() != Role.ADMIN && !canSubmitAttendance(faculty, timeSlot, submissionDTO.getDate()))
+            throw new IllegalStateException("Faculty cannot submit attendance for this time slot");
 
-        System.out.println("Can submit attendance for faculty: " + faculty.getUsername() + " on date: " + submissionDTO.getDate() + " For time slot " + timeSlot.getId());
 
-        // Check if user is admin
+        log.info("Can submit attendance for faculty: {} on date: {} For time slot {}", faculty.getUsername(), submissionDTO.getDate(), timeSlot.getId());
+
+
         boolean isAdmin = faculty.getRole().name().equals("ADMIN");
-        
-        // Check for duplicate submission
+
+
         boolean attendanceExists = isAttendanceAlreadySubmitted(faculty, timeSlot, submissionDTO.getDate());
         if (attendanceExists) {
             if (isAdmin) {
-                // For admin, delete existing attendance records and allow update
                 log.info("Admin request detected. Deleting existing attendance records for update.");
-                
-                // Find existing attendance session
+
                 AttendanceSession existingSession = attendanceSessionRepository.findByTimeSlotAndDate(timeSlot, date)
                         .orElse(null);
-                
+
                 if (existingSession != null) {
-                    // Delete existing attendance records
+
                     List<Attendance> existingAttendance = attendanceRepository.findByAttendanceSession(existingSession);
                     attendanceRepository.deleteAll(existingAttendance);
-                    
-                    // Delete existing session
+
+
                     attendanceSessionRepository.delete(existingSession);
                     log.info("Deleted existing attendance session and {} attendance records", existingAttendance.size());
                 }
-            } else {
-                // For faculty, show error
+            } else
                 throw new IllegalStateException("Attendance already submitted for this time slot and date");
-            }
+
         }
 
-        // Calculate attendance statistics
         int totalStudents = submissionDTO.getAttendanceRecords().size();
-        int presentCount =  submissionDTO.getAttendanceRecords().stream()
+        int presentCount = submissionDTO.getAttendanceRecords().stream()
                 .mapToInt(record -> record.isPresent() ? 1 : 0)
                 .sum();
         int absentCount = totalStudents - presentCount;
 
-        // Determine submission status
         SubmissionStatus submissionStatus = determineSubmissionStatus(timeSlot);
 
-        // Create attendance session
         AttendanceSession attendanceSession = AttendanceSession.builder()
                 .faculty(faculty)
                 .section(section)
@@ -108,7 +100,6 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
 
         attendanceSession = attendanceSessionRepository.save(attendanceSession);
 
-        // Create individual attendance records
         for (AttendanceSubmissionDTO.StudentAttendanceRecordDTO record : submissionDTO.getAttendanceRecords()) {
             Student student = studentRepository.findById(UUID.fromString(record.getStudentId()))
                     .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + record.getStudentId()));
@@ -123,9 +114,18 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
                     .build();
 
             attendanceRepository.save(attendance);
+
+            studentService.updateStudentAttendancePercentage(student.getId(), getNewAttdReport(student));
         }
 
         log.info("Attendance submitted successfully. Session ID: {}", attendanceSession.getId());
+
+        activityLogService.logAttendancePosted(
+                faculty,
+                section,
+                timeSlot,
+                attendanceSession.getAbsentCount()
+        );
 
         return AttendanceSessionResponseDTO.builder()
                 .id(attendanceSession.getId().toString())
@@ -144,6 +144,13 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
                 .submissionStatus(attendanceSession.getSubmissionStatus())
                 .lateSubmissionReason(attendanceSession.getLateSubmissionReason())
                 .build();
+    }
+
+    private Double getNewAttdReport(Student student) {
+        long totalClasses = attendanceRepository.countAttdByStudent(student);
+        long absences = attendanceRepository.countAbsencesByStudent(student);
+
+        return totalClasses > 0 ? ((totalClasses - absences) * 100.0) / totalClasses : 0;
     }
 
     @Override
@@ -179,7 +186,7 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
 
     @Override
     public boolean canSubmitAttendance(User faculty, TimeSlot timeSlot, String date) {
-        // Check if faculty is assigned to this time slot
+
         return timeSlot.getInchargeFaculty().getId().equals(faculty.getId());
     }
 
@@ -188,103 +195,49 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
         LocalDate localDate = LocalDate.parse(date);
         return attendanceSessionRepository.existsByFacultyAndTimeSlotAndDate(faculty, timeSlot, localDate);
     }
-    
+
     @Override
     @Transactional
     public AttendanceSessionDTO submitLateAttendanceReason(LateSubmissionDTO lateSubmissionDTO, User faculty) {
-        log.info("Faculty {} submitting late attendance reason for session {}", 
-                 faculty.getUsername(), lateSubmissionDTO.getSessionId());
-        
+        log.info("Faculty {} submitting late attendance reason for session {}",
+                faculty.getUsername(), lateSubmissionDTO.getSessionId());
+
         AttendanceSession session = attendanceSessionRepository.findById(lateSubmissionDTO.getSessionId())
-            .orElseThrow(() -> new ResourceNotFoundException("Attendance session not found"));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Attendance session not found"));
+
         // Verify that the session belongs to the faculty
         if (!session.getFaculty().getId().equals(faculty.getId())) {
-            log.warn("Faculty {} attempted to update session {} belonging to faculty {}", 
+            log.warn("Faculty {} attempted to update session {} belonging to faculty {}",
                     faculty.getUsername(), session.getId(), session.getFaculty().getUsername());
             throw new AccessDeniedException("You don't have permission to update this session");
         }
-        
+
         session.setSubmissionStatus(SubmissionStatus.LATE);
         session.setLateSubmissionReason(lateSubmissionDTO.getReason());
-        
+
         AttendanceSession savedSession = attendanceSessionRepository.save(session);
-        log.info("Updated submission status for session {} to LATE with reason: {}", 
+        log.info("Updated submission status for session {} to LATE with reason: {}",
                 session.getId(), lateSubmissionDTO.getReason());
-        
+
         return mapToDTO(savedSession);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public List<AttendanceSessionDTO> getMissedAttendanceSessions(User faculty) {
         log.info("Getting missed attendance sessions for faculty {}", faculty.getUsername());
-        
+
         LocalDate today = LocalDate.now();
         LocalTime currentTime = LocalTime.now();
-        
+
         // Get all time slots for the faculty
         List<TimeSlot> facultyTimeSlots = timeSlotRepository.findByInchargeFaculty(faculty);
-        
+
         // Filter time slots that have passed for today
         List<TimeSlot> passedTimeSlots = facultyTimeSlots.stream()
-            .filter(slot -> {
-                try {
-                    // Parse time in a more robust way
-                    LocalTime endTime = parseTimeString(slot.getEndTime());
-                    return endTime.isBefore(currentTime);
-                } catch (Exception e) {
-                    log.error("Error parsing time slot end time '{}': {}", slot.getEndTime(), e.getMessage());
-                    return false;
-                }
-            })
-            .toList();
-        
-        log.debug("Found {} passed time slots for faculty {}", passedTimeSlots.size(), faculty.getUsername());
-        
-        // Find sessions that should have been submitted but weren't
-        List<AttendanceSessionDTO> missedSessions = new ArrayList<>();
-        
-        for (TimeSlot slot : passedTimeSlots) {
-            boolean sessionExists = attendanceSessionRepository.existsByFacultyAndTimeSlotAndDate(faculty, slot, today);
-            
-            if (!sessionExists) {
-                log.debug("Found missed session for time slot {} at {}", slot.getId(), slot.getStartTime());
-                
-                // Create a placeholder missed session DTO
-                AttendanceSessionDTO missedSession = AttendanceSessionDTO.builder()
-                    .facultyId(faculty.getId())
-                    .facultyName(faculty.getName())
-                    .sectionId(slot.getSection().getId())
-                    .sectionName(slot.getSection().getName())
-                    .timeSlotId(slot.getId())
-                    .startTime(slot.getStartTime())
-                    .endTime(slot.getEndTime())
-                    .date(today)
-                    .submissionStatus(SubmissionStatus.MISSED)
-                    .build();
-                
-                missedSessions.add(missedSession);
-            }
-        }
-        
-        return missedSessions;
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public List<AttendanceSessionDTO> getMissedAttendanceSessionsByDate(User faculty, LocalDate date) {
-        log.info("Getting missed attendance sessions for faculty {} on date {}", faculty.getUsername(), date);
-        
-        // Get all time slots for the faculty
-        List<TimeSlot> facultyTimeSlots = timeSlotRepository.findByInchargeFaculty(faculty);
-        
-        // If the date is today, only include time slots that have already passed
-        if (date.equals(LocalDate.now())) {
-            LocalTime currentTime = LocalTime.now();
-            facultyTimeSlots = facultyTimeSlots.stream()
                 .filter(slot -> {
                     try {
+                        // Parse time in a more robust way
                         LocalTime endTime = parseTimeString(slot.getEndTime());
                         return endTime.isBefore(currentTime);
                     } catch (Exception e) {
@@ -293,76 +246,131 @@ public class FacultyAttendanceServiceImpl implements FacultyAttendanceService {
                     }
                 })
                 .toList();
-        }
-        
+
+        log.debug("Found {} passed time slots for faculty {}", passedTimeSlots.size(), faculty.getUsername());
+
         // Find sessions that should have been submitted but weren't
         List<AttendanceSessionDTO> missedSessions = new ArrayList<>();
-        
-        for (TimeSlot slot : facultyTimeSlots) {
-            boolean sessionExists = attendanceSessionRepository.existsByFacultyAndTimeSlotAndDate(faculty, slot, date);
-            
+
+        for (TimeSlot slot : passedTimeSlots) {
+            boolean sessionExists = attendanceSessionRepository.existsByFacultyAndTimeSlotAndDate(faculty, slot, today);
+
             if (!sessionExists) {
-                log.debug("Found missed session for time slot {} at {} on date {}", 
-                         slot.getId(), slot.getStartTime(), date);
-                
+                log.debug("Found missed session for time slot {} at {}", slot.getId(), slot.getStartTime());
+
                 // Create a placeholder missed session DTO
                 AttendanceSessionDTO missedSession = AttendanceSessionDTO.builder()
-                    .facultyId(faculty.getId())
-                    .facultyName(faculty.getName())
-                    .sectionId(slot.getSection().getId())
-                    .sectionName(slot.getSection().getName())
-                    .timeSlotId(slot.getId())
-                    .startTime(slot.getStartTime())
-                    .endTime(slot.getEndTime())
-                    .date(date)
-                    .submissionStatus(SubmissionStatus.MISSED)
-                    .build();
-                
+                        .facultyId(faculty.getId())
+                        .facultyName(faculty.getName())
+                        .sectionId(slot.getSection().getId())
+                        .sectionName(slot.getSection().getName())
+                        .timeSlotId(slot.getId())
+                        .startTime(slot.getStartTime())
+                        .endTime(slot.getEndTime())
+                        .date(today)
+                        .submissionStatus(SubmissionStatus.MISSED)
+                        .build();
+
                 missedSessions.add(missedSession);
             }
         }
-        
+
         return missedSessions;
     }
-    
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AttendanceSessionDTO> getMissedAttendanceSessionsByDate(User faculty, LocalDate date) {
+        log.info("Getting missed attendance sessions for faculty {} on date {}", faculty.getUsername(), date);
+
+        // Get all time slots for the faculty
+        List<TimeSlot> facultyTimeSlots = timeSlotRepository.findByInchargeFaculty(faculty);
+
+        // If the date is today, only include time slots that have already passed
+        if (date.equals(LocalDate.now())) {
+            LocalTime currentTime = LocalTime.now();
+            facultyTimeSlots = facultyTimeSlots.stream()
+                    .filter(slot -> {
+                        try {
+                            LocalTime endTime = parseTimeString(slot.getEndTime());
+                            return endTime.isBefore(currentTime);
+                        } catch (Exception e) {
+                            log.error("Error parsing time slot end time '{}': {}", slot.getEndTime(), e.getMessage());
+                            return false;
+                        }
+                    })
+                    .toList();
+        }
+
+        // Find sessions that should have been submitted but weren't
+        List<AttendanceSessionDTO> missedSessions = new ArrayList<>();
+
+        for (TimeSlot slot : facultyTimeSlots) {
+            boolean sessionExists = attendanceSessionRepository.existsByFacultyAndTimeSlotAndDate(faculty, slot, date);
+
+            if (!sessionExists) {
+                log.debug("Found missed session for time slot {} at {} on date {}",
+                        slot.getId(), slot.getStartTime(), date);
+
+                // Create a placeholder missed session DTO
+                AttendanceSessionDTO missedSession = AttendanceSessionDTO.builder()
+                        .facultyId(faculty.getId())
+                        .facultyName(faculty.getName())
+                        .sectionId(slot.getSection().getId())
+                        .sectionName(slot.getSection().getName())
+                        .timeSlotId(slot.getId())
+                        .startTime(slot.getStartTime())
+                        .endTime(slot.getEndTime())
+                        .date(date)
+                        .submissionStatus(SubmissionStatus.MISSED)
+                        .build();
+
+                missedSessions.add(missedSession);
+            }
+        }
+
+        return missedSessions;
+    }
+
     private SubmissionStatus determineSubmissionStatus(TimeSlot timeSlot) {
         try {
             LocalTime endTime = parseTimeString(timeSlot.getEndTime());
             LocalTime currentTime = LocalTime.now();
-            
+
             // If submission is after the end time, mark as LATE
             if (currentTime.isAfter(endTime)) {
                 return SubmissionStatus.LATE;
             }
-            
+
             return SubmissionStatus.ON_TIME;
         } catch (Exception e) {
             log.error("Error determining submission status: {}", e.getMessage());
             return SubmissionStatus.ON_TIME;
         }
     }
-    
+
     private AttendanceSessionDTO mapToDTO(AttendanceSession session) {
         return AttendanceSessionDTO.builder()
-            .id(session.getId())
-            .facultyId(session.getFaculty().getId())
-            .facultyName(session.getFaculty().getName())
-            .sectionId(session.getSection().getId())
-            .sectionName(session.getSection().getName())
-            .timeSlotId(session.getTimeSlot().getId())
-            .startTime(session.getTimeSlot().getStartTime())
-            .endTime(session.getTimeSlot().getEndTime())
-            .date(session.getDate())
-            .topicTaught(session.getTopicTaught())
-            .totalStudents(session.getTotalStudents())
-            .presentCount(session.getPresentCount())
-            .absentCount(session.getAbsentCount())
-            .attendancePercentage(session.getAttendancePercentage())
-            .submittedAt(session.getSubmittedAt())
-            .submissionStatus(session.getSubmissionStatus())
-            .lateSubmissionReason(session.getLateSubmissionReason())
-            .build();
+                .id(session.getId())
+                .facultyId(session.getFaculty().getId())
+                .facultyName(session.getFaculty().getName())
+                .sectionId(session.getSection().getId())
+                .sectionName(session.getSection().getName())
+                .timeSlotId(session.getTimeSlot().getId())
+                .startTime(session.getTimeSlot().getStartTime())
+                .endTime(session.getTimeSlot().getEndTime())
+                .date(session.getDate())
+                .topicTaught(session.getTopicTaught())
+                .totalStudents(session.getTotalStudents())
+                .presentCount(session.getPresentCount())
+                .absentCount(session.getAbsentCount())
+                .attendancePercentage(session.getAttendancePercentage())
+                .submittedAt(session.getSubmittedAt())
+                .submissionStatus(session.getSubmissionStatus())
+                .lateSubmissionReason(session.getLateSubmissionReason())
+                .build();
     }
+
     /**
      * Parse a time string in format "HH:mm" or "H:mm" to LocalTime
      *
