@@ -1,22 +1,14 @@
 package com.crt.server.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.DayOfWeek;
 
 @Getter
 @Setter
@@ -26,11 +18,12 @@ import lombok.Setter;
 @Entity
 @Table(name = "time_slots", indexes = {
     @Index(name = "idx_timeslots_faculty", columnList = "incharge_faculty_id"),
-    @Index(name = "idx_timeslots_faculty_break", columnList = "incharge_faculty_id, isBreak"),
     @Index(name = "idx_timeslots_section", columnList = "section_id"),
     @Index(name = "idx_timeslots_faculty_section", columnList = "incharge_faculty_id, section_id"),
     @Index(name = "idx_timeslots_schedule", columnList = "schedule_id"),
-    @Index(name = "idx_timeslots_room", columnList = "room_id")
+    @Index(name = "idx_timeslots_room", columnList = "room_id"),
+    @Index(name = "idx_timeslots_slot_type", columnList = "slot_type"),
+    @Index(name = "idx_timeslots_day_of_week", columnList = "day_of_week")
 })
 public class TimeSlot {
     @Id
@@ -43,8 +36,25 @@ public class TimeSlot {
     @Column(nullable = false)
     private String endTime;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "slot_type", nullable = false)
+    @Builder.Default
+    private TimeSlotType slotType = TimeSlotType.REGULAR;
+
+    @Column
+    private String title; // For exams, special events, or break descriptions
+
+    @Column
+    private String description; // Additional details
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "day_of_week", nullable = false)
+    private DayOfWeek dayOfWeek;
+
+    // Legacy fields for backward compatibility - will be removed in future versions
     @Column(nullable = false)
-    private boolean isBreak;
+    @Builder.Default
+    private boolean isBreak = false;
 
     @Column
     private String breakDescription;
@@ -70,9 +80,16 @@ public class TimeSlot {
 
     @PrePersist
     @PreUpdate
-    public void validateRoomCapacity() {
-        if (!isBreak && section.getStrength() > room.getCapacity()) {
+    public void validateAndSync() {
+        // Validate room capacity for non-break slots
+        if (slotType != TimeSlotType.BREAK && section.getStrength() > room.getCapacity()) {
             throw new IllegalStateException("Section strength cannot exceed room capacity");
+        }
+        
+        // Sync legacy fields for backward compatibility
+        this.isBreak = (slotType == TimeSlotType.BREAK);
+        if (slotType == TimeSlotType.BREAK && title != null) {
+            this.breakDescription = title;
         }
     }
 }

@@ -343,7 +343,7 @@ public class UserServiceImpl implements UserService {
                 log.error("Error in creating Faculty: {} for ID {}", e.getMessage(), fac.getEmployeeId());
             }
         }
-        return STR."Processed \{count} faculties out of \{facs.size()} faculties";
+        return String.format("Processed %d faculties out of %d faculties", count, facs.size());
     }
 
     private void validateReqFields(CSVRecord record) throws Exception {

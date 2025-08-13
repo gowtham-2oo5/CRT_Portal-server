@@ -17,7 +17,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "section_schedules")
+@Table(name = "section_schedules", 
+       uniqueConstraints = @UniqueConstraint(columnNames = "section_id", name = "uk_section_schedules_section_id"))
 public class SectionSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

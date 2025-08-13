@@ -28,4 +28,27 @@ public class TimeSlotValidationResponseDTO {
         private String sectionId;
         private String sectionName;
     }
+
+    // Static factory methods for convenience
+    public static TimeSlotValidationResponseDTO valid(String message) {
+        return TimeSlotValidationResponseDTO.builder()
+                .valid(true)
+                .message(message)
+                .build();
+    }
+
+    public static TimeSlotValidationResponseDTO invalid(String message) {
+        return TimeSlotValidationResponseDTO.builder()
+                .valid(false)
+                .message(message)
+                .build();
+    }
+
+    public static TimeSlotValidationResponseDTO invalid(String message, String reason) {
+        return TimeSlotValidationResponseDTO.builder()
+                .valid(false)
+                .message(message)
+                .reason(reason)
+                .build();
+    }
 }
