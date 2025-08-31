@@ -23,7 +23,7 @@ import java.util.Set;
     @Index(name = "idx_users_role", columnList = "role"),
     @Index(name = "idx_users_active", columnList = "isActive"),
     @Index(name = "idx_users_role_active", columnList = "role, isActive"),
-    @Index(name = "idx_users_branch", columnList = "branch")
+    @Index(name = "idx_users_branch", columnList = "department")
 })
 public class User implements UserDetails {
 

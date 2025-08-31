@@ -3,6 +3,7 @@ package com.crt.server.service.impl;
 import com.crt.server.security.CookieService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -84,6 +86,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         boolean wasFirst = user.isFirstLogin();
+        log.info("Fetching first login: " + wasFirst + " user: " + user.getName());
         UserDTO userDTO = userService.getUserByEmail(user.getEmail());
 
         String token = jwtService.generateToken(user);
@@ -96,11 +99,11 @@ public class AuthServiceImpl implements AuthService {
         stringRedisTemplate.opsForValue().set(refreshTokenString, user.getUsername(), jwtService.getRefreshExpiration(), TimeUnit.MILLISECONDS);
 
         if (wasFirst) userService.updateFirstLoginStatus(user.getEmail(), false);
-
+        log.info("WAs FIRST: " + wasFirst);
         cookieService.createAccessTokenCookie(token, response);
         cookieService.createRefreshTokenCookie(refreshTokenString, response);
 
-
+        userDTO.setIsFirstLogin(wasFirst);
         return AuthResponseDTO.builder()
                 .message("OTP verified successfully")
                 .user(userDTO)

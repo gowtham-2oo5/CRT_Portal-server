@@ -48,4 +48,19 @@ public class CsvServiceImpl implements CsvService {
         }
         return results;
     }
+    @Override
+    public List<CSVRecord> parseCsvWithoutHeaders(MultipartFile file) throws IOException {
+        try (InputStreamReader reader = new InputStreamReader(file.getInputStream())) {
+            CSVFormat format = CSVFormat.DEFAULT.builder()
+                    .setIgnoreEmptyLines(true)
+                    .setTrim(true)
+                    .get();
+
+            CSVParser parser = format.parse(reader);
+            return parser.getRecords();
+        } catch (Exception e) {
+            log.error("Error parsing CSV file without headers: {}", e.getMessage());
+            throw new IOException("Error parsing CSV file", e);
+        }
+    }
 }

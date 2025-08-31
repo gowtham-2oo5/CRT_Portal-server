@@ -119,6 +119,13 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    public RoomDTO getRoomByCode(String roomCode) {
+        Room room = roomRepository.findByRoomCode(roomCode);
+        if (room == null) {
+            throw new ResourceNotFoundException("Room not found with code: " + roomCode);
+        }
+        return convertToDTO(room);
+    }    @Override
     public List<RoomDTO> bulkCreateRoomsFromSimpleFormat(MultipartFile file) throws Exception {
         String[] headers = { "roomString", "capacity", "roomType" };
 

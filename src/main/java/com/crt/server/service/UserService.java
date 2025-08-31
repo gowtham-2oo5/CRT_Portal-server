@@ -20,6 +20,8 @@ public interface UserService {
 
     UserDTO getUserByEmail(String email);
 
+    User getUserByEmployeeId(String employeeId);
+
     List<UserDTO> getAllUsers();
 
     PagedResponseDTO<UserDTO> getUsersPaginated(int page, int size, String sortBy, String direction);

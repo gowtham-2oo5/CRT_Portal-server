@@ -1,10 +1,6 @@
 package com.crt.server.repository;
 
-import com.crt.server.model.Room;
-import com.crt.server.model.Section;
-import com.crt.server.model.TimeSlot;
-import com.crt.server.model.TimeSlotType;
-import com.crt.server.model.User;
+import com.crt.server.model.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -127,4 +123,9 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, Integer> {
             "WHERE ts1.id = :timeSlot1Id AND ts2.id = :timeSlot2Id " +
             "AND ts1.endTime = ts2.startTime AND ts1.section = ts2.section AND ts1.room = ts2.room")
     boolean areTimeSlotsAdjacent(@Param("timeSlot1Id") Integer timeSlot1Id, @Param("timeSlot2Id") Integer timeSlot2Id);
+    
+    // Methods for bulk timetable operations
+    List<TimeSlot> findBySectionAndDayOfWeek(Section section, DayOfWeek dayOfWeek);
+    
+    List<TimeSlot> findByScheduleAndDayOfWeek(SectionSchedule schedule, DayOfWeek dayOfWeek);
 }

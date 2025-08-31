@@ -16,5 +16,7 @@ public class SectionScheduleDTO {
     private UUID id;
     private UUID sectionId;
     private UUID roomId;
+    private RoomDTO room;
+    private SectionDTO section;
     private List<TimeSlotDTO> timeSlots;
 }

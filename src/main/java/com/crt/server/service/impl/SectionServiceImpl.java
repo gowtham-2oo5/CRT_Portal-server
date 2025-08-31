@@ -235,6 +235,7 @@ public class SectionServiceImpl implements SectionService {
         try {
             List<CSVRecord> records = csvService.parseCsv(file, headers);
             List<Section> allSections = new ArrayList<>();
+            int skippedCount = 0;
 
             for (CSVRecord record : records) {
                 validateRequiredFields(record);
@@ -246,14 +247,20 @@ public class SectionServiceImpl implements SectionService {
                 Training training = getTraining(trainingName);
 
                 if (training == null) {
-                    throw new RuntimeException("Training not found: " + trainingName);
+                    log.warn("Training not found, skipping: {}", trainingName);
+                    continue;
                 }
                 System.out.println("Section STRING [DEBUG]" + sectionsString);
                 List<String> sections = parseSectionsList(sectionsString);
                 System.out.println("SECTIONS: " + sections);
                 System.out.println("Creating " + sections.size() + " sections for training: " + trainingName);
                 for (String sectionName : sections) {
-
+                    // Check if section already exists
+                    if (sectionRepository.existsByName(sectionName)) {
+                        log.info("Section already exists, skipping: {}", sectionName);
+                        skippedCount++;
+                        continue;
+                    }
                     Section section = Section.builder()
                             .name(sectionName)
                             .training(training)
@@ -265,7 +272,7 @@ public class SectionServiceImpl implements SectionService {
             }
 
             List<Section> savedSections = sectionRepository.saveAll(allSections);
-            log.info("Saved {} sections", savedSections.size());
+            log.info("Saved {} sections, skipped {} duplicates", savedSections.size(), skippedCount);
 
             return savedSections.stream()
                     .map(this::mapToDTO)

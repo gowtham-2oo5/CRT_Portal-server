@@ -90,7 +90,7 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(generatedPassword))
                 .employeeId(createUserDTO.getEmployeeId())
                 .role(createUserDTO.getRole())
-                .designation(createUserDTO.getDesignation())
+                .designation((createUserDTO.getDesignation() == null) ? "Professor" : createUserDTO.getDesignation())
                 .department(createUserDTO.getDepartment())
                 .isFirstLogin(true)
                 .isActive(createUserDTO.getIsActive() != null ? createUserDTO.getIsActive() : true)
@@ -148,6 +148,12 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return convertToDTO(user);
+    }
+
+    @Override
+    public User getUserByEmployeeId(String employeeId) {
+        return userRepository.findByEmployeeId(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Faculty not found with employee ID: " + employeeId));
     }
 
     @Override
@@ -332,8 +338,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public String createUsers(List<UserDTO> facs) {
         int count = 0;
-        for(UserDTO fac : facs) {
-            try{
+        for (UserDTO fac : facs) {
+            try {
                 System.out.printf("Processing faculty: %s%n", fac.toString());
                 fac.setId(createUser(fac).getId());
                 String msg = "Created user with ID: {} for faculty: {}";

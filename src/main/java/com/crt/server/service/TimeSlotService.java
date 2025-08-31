@@ -1,13 +1,17 @@
 package com.crt.server.service;
 
+import com.crt.server.dto.SectionDayScheduleDTO;
 import com.crt.server.dto.TimeSlotDTO;
 import com.crt.server.dto.TimeSlotValidationResponseDTO;
+import com.crt.server.dto.TimetableUploadResponseDTO;
 import com.crt.server.model.Section;
 import com.crt.server.model.TimeSlot;
 import com.crt.server.model.TimeSlotType;
 import com.crt.server.model.User;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.DayOfWeek;
 import java.util.List;
@@ -54,4 +58,16 @@ public interface TimeSlotService {
     
     @Transactional(readOnly = true)
     TimeSlotDTO getTimeSlotById(Integer id);
+    
+    // Bulk timetable operations
+    TimetableUploadResponseDTO bulkCreateTimetable(MultipartFile file) throws Exception;
+
+    @Transactional
+    TimetableUploadResponseDTO.SectionTimetableDTO processSectionTimetableTransactional(
+            String sectionName, String program, String roomCode, CSVRecord record,
+            int startCol, int endCol, DayOfWeek dayOfWeek, List<String> errors, List<String> warnings);
+
+    // Section schedule queries
+    SectionDayScheduleDTO getSectionScheduleByDay(String sectionName, DayOfWeek dayOfWeek);
+    SectionDayScheduleDTO getSectionScheduleByDay(UUID sectionId, DayOfWeek dayOfWeek);
 }

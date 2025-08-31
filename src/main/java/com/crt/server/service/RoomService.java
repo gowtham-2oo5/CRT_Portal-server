@@ -20,6 +20,9 @@ public interface RoomService {
 
     // Room string parsing
     RoomDTO parseRoomString(String roomString);
+    
+    // Room lookup by code (e.g., "C625", "R505B")
+    RoomDTO getRoomByCode(String roomCode);
 
     // Bulk operations
     List<RoomDTO> bulkCreateRoomsFromSimpleFormat(MultipartFile file) throws Exception;

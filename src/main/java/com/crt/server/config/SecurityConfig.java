@@ -36,8 +36,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/",
+                        .requestMatchers("/",
                                 "/actuator/**",
                                 "/api/users/me",
                                 "/api/users/**",
@@ -51,7 +50,7 @@ public class SecurityConfig {
                                 "/ws-native/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyRequest().authenticated())
+                        .anyRequest().hasAnyAuthority("ADMIN", "FACULTY"))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)

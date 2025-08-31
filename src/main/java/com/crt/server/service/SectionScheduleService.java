@@ -2,6 +2,7 @@ package com.crt.server.service;
 
 import com.crt.server.dto.SectionScheduleDTO;
 import com.crt.server.dto.TimeSlotDTO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,4 +25,6 @@ public interface SectionScheduleService {
     SectionScheduleDTO removeTimeSlot(UUID scheduleId, Integer timeSlotId);
 
     SectionScheduleDTO updateTimeSlot(UUID scheduleId, Integer timeSlotId, TimeSlotDTO timeSlotDTO);
+
+    String bulkUploadSchedule(MultipartFile file) throws Exception;
 }

@@ -1,20 +1,26 @@
 package com.crt.server.service.impl;
 
+import com.crt.server.dto.RoomDTO;
+import com.crt.server.dto.SectionDTO;
 import com.crt.server.dto.SectionScheduleDTO;
 import com.crt.server.dto.TimeSlotDTO;
 import com.crt.server.model.*;
 import com.crt.server.repository.*;
+import com.crt.server.service.RoomService;
 import com.crt.server.service.SectionScheduleService;
 import com.crt.server.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class SectionScheduleServiceImpl implements SectionScheduleService {
 
@@ -34,6 +40,8 @@ public class SectionScheduleServiceImpl implements SectionScheduleService {
     private UserRepository userRepository;
     @Autowired
     private UserService userService;
+    @Autowired
+    private RoomService roomService;
 
     @Override
     @Transactional
@@ -163,6 +171,22 @@ public class SectionScheduleServiceImpl implements SectionScheduleService {
     }
 
     @Override
+    public String bulkUploadSchedule(MultipartFile file) throws Exception {
+        try {
+            String[] headers = {
+                    "DAY", "SECTIONS", "CLASS", "ROOMNO",
+                    "09:20-10:10", "10:10-11:00", "11:10-12:00", "12:00-12:50",
+                    "SECTIONS_2", "CLASS_2", "ROOMNO_2",
+                    "01:50-02:40", "02:40-03:30", "03:40-04:30", "04:30-05:20"
+            };
+            return "";
+        } catch (Exception e) {
+            log.error(e.getCause().getMessage());
+            return e.getLocalizedMessage();
+        }
+    }
+
+    @Override
     @Transactional
     public SectionScheduleDTO removeTimeSlot(UUID scheduleId, Integer timeSlotId) {
         SectionSchedule schedule = sectionScheduleRepository.findById(scheduleId)
@@ -190,12 +214,29 @@ public class SectionScheduleServiceImpl implements SectionScheduleService {
         List<TimeSlotDTO> timeSlotDTOs = schedule.getTimeSlots().stream()
                 .map(this::mapTimeSlotToDTO)
                 .collect(Collectors.toList());
-
         return SectionScheduleDTO.builder()
                 .id(schedule.getId())
                 .sectionId(schedule.getSection().getId())
                 .roomId(schedule.getRoom().getId())
+                .room(mapToRoomDTO(schedule.getRoom()))
+                .section(mapToSectionDTO(schedule.getSection()))
                 .timeSlots(timeSlotDTOs)
+                .build();
+    }
+
+    private SectionDTO mapToSectionDTO(Section section) {
+        return SectionDTO.builder()
+                .id(section.getId())
+                .name(section.getName())
+                .strength(section.getStrength())
+                .build();
+    }
+
+    private RoomDTO mapToRoomDTO(Room room) {
+        return RoomDTO.builder()
+                .id(room.getId())
+                .roomString(room.toString())
+                .capacity(room.getCapacity())
                 .build();
     }
 

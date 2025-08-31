@@ -1,6 +1,7 @@
 package com.crt.server.repository;
 
 import com.crt.server.model.Room;
+import com.crt.server.model.Section;
 import com.crt.server.model.SectionSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,4 +24,6 @@ public interface SectionScheduleRepository extends JpaRepository<SectionSchedule
     
     // Original method - kept for backward compatibility but may throw exception if multiple exist
     Optional<SectionSchedule> findBySectionId(UUID sectionId);
+
+    List<SectionSchedule> findBySection(Section section);
 }

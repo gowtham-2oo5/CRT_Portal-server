@@ -11,19 +11,23 @@ import java.util.UUID;
 @Repository
 public interface RoomRepository extends JpaRepository<Room, UUID> {
 
-        @Query("SELECT r FROM Room r WHERE r.block = :block AND r.floor = :floor AND r.roomNumber = :roomNumber")
-        Room findByBlockAndFloorAndRoomNumber(
-                        @Param("block") String block,
-                        @Param("floor") String floor,
-                        @Param("roomNumber") String roomNumber);
+    @Query("SELECT r FROM Room r WHERE r.block = :block AND r.floor = :floor AND r.roomNumber = :roomNumber")
+    Room findByBlockAndFloorAndRoomNumber(
+            @Param("block") String block,
+            @Param("floor") String floor,
+            @Param("roomNumber") String roomNumber);
 
-        @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Room r WHERE r.block = :block AND r.floor = :floor AND r.roomNumber = :roomNumber AND r.subRoom = :subRoom")
-        boolean existsByBlockAndFloorAndRoomNumber(
-                @Param("block") String block,
-                @Param("floor") String floor,
-                @Param("roomNumber") String roomNumber,
-                @Param("subRoom")String subRoom);
+    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Room r WHERE r.block = :block AND r.floor = :floor AND r.roomNumber = :roomNumber AND r.subRoom = :subRoom")
+    boolean existsByBlockAndFloorAndRoomNumber(
+            @Param("block") String block,
+            @Param("floor") String floor,
+            @Param("roomNumber") String roomNumber,
+            @Param("subRoom") String subRoom);
 
-        @Query("SELECT CASE WHEN COUNT(r) > 0 then TRUE ELSE false END FROM Room r WHERE r.roomNumber = :s")
-        Boolean existsByRoomNumber(String s);
+    @Query("SELECT CASE WHEN COUNT(r) > 0 then TRUE ELSE false END FROM Room r WHERE r.roomNumber = :s")
+    Boolean existsByRoomNumber(String s);
+
+    @Query("SELECT r FROM Room r WHERE CONCAT(r.block, r.floor, r.roomNumber, COALESCE(r.subRoom, '')) = :roomCode")
+    Room findByRoomCode(@Param("roomCode") String roomCode);
+
 }

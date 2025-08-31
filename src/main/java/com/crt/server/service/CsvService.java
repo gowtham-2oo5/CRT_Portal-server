@@ -29,6 +29,15 @@ public interface CsvService {
     <T> List<T> parseCsv(MultipartFile file, String[] headers, RecordMapper<T> mapper) throws IOException;
 
     /**
+     * Parse a CSV file without predefined headers (for custom formats like timetables)
+     * 
+     * @param file The CSV file to parse
+     * @return List of CSVRecord objects
+     * @throws IOException if there is an error reading the file
+     */
+    List<CSVRecord> parseCsvWithoutHeaders(MultipartFile file) throws IOException;
+
+    /**
      * Functional interface for mapping CSVRecord to a specific type
      * 
      * @param <T> The type to map to
