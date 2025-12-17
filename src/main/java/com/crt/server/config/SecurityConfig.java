@@ -76,7 +76,7 @@ public class SecurityConfig {
                 "http://127.0.0.1:3001",
                 "https://localhost:3000",
                 "https://localhost:3001",
-                "https://crt-portal-iota.vercel.app/"
+                "https://crt-portal-iota.vercel.app"
         ));
 
 
@@ -98,5 +98,6 @@ public class SecurityConfig {
         return source;
     }
 }
+
 
 
