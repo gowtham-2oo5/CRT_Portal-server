@@ -43,6 +43,10 @@ public class AuthServiceImpl implements AuthService {
     private final CookieService cookieService;
     private final StringRedisTemplate stringRedisTemplate;
 
+    static {
+        bypassMails.add("admin@kluniversity.in");
+    }
+
     @Override
     public AuthResponseDTO login(AuthRequestDTO loginRequest) {
         User user = validateCredentials(loginRequest.getUsernameOrEmail(), loginRequest.getPassword());
@@ -52,12 +56,20 @@ public class AuthServiceImpl implements AuthService {
             throw new ResourceNotFoundException("User not found");
         }
 
-        // Generate and store OTP
-        String otp = otpService.generateOTP();
-        otpService.storeOTP(loginRequest.getUsernameOrEmail(), otp);
-
-        // Send OTP via email
-        emailService.sendLoginOtp(otp, user.getEmail());
+        // Generate OTP
+        String otp;
+        
+        // Handle OTP bypass for specific emails
+        if (bypassMails.contains(user.getEmail())) {
+            // For bypass emails, use a fixed OTP for easy testing
+            otp = "123456";
+            otpService.storeOTP(loginRequest.getUsernameOrEmail(), otp);
+            log.info("OTP bypass activated for email: {}, OTP: {}", user.getEmail(), otp);
+        } else {
+            otp = otpService.generateOTP();
+            otpService.storeOTP(loginRequest.getUsernameOrEmail(), otp);
+            emailService.sendLoginOtp(otp, user.getEmail());
+        }
 
         String maskedEmail = maskEmail(user.getEmail());
         return AuthResponseDTO.builder()
@@ -90,10 +102,7 @@ public class AuthServiceImpl implements AuthService {
         UserDTO userDTO = userService.getUserByEmail(user.getEmail());
 
         String token = jwtService.generateToken(user);
-//        String refreshToken = jwtService.generateRefreshToken(user);
         if (wasFirst) userService.updateFirstLoginStatus(user.getEmail(), false);
-//        System.out.println(user.isFirstLogin());
-//        System.out.println("HEREES THE TOKEN RA: " + token);
 
         String refreshTokenString = jwtService.generateRefreshToken(user);
         stringRedisTemplate.opsForValue().set(refreshTokenString, user.getUsername(), jwtService.getRefreshExpiration(), TimeUnit.MILLISECONDS);

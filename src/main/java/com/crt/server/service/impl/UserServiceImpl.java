@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.io.FileWriter;
+import java.io.IOException;
 
 @Service
 @RequiredArgsConstructor
@@ -301,7 +303,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserDTO> bulkUploadFacs(MultipartFile file) throws Exception {
-        String[] headers = {"Empl Id", "Employee Name", "Designation", "DEPT", "KLU Mail Id's", "Contact No"};
+        String[] headers = {"Empl Id", "Employee Name", "Designation", "DEPT", "KLU Mails", "Contact No"};
 
         try {
 
@@ -311,11 +313,11 @@ public class UserServiceImpl implements UserService {
                 } catch (Exception e) {
                     log.error(e.getLocalizedMessage());
                 }
-                if (userRepository.existsByEmail(record.get("KLU Mail Id's"))) return null;
+                if (userRepository.existsByEmail(record.get("KLU Mails"))) return null;
                 return UserDTO.builder()
                         .name(record.get("Employee Name"))
-                        .email(record.get("KLU Mail Id's"))
-                        .username(record.get("KLU Mail Id's").split("@")[0])
+                        .email(record.get("KLU Mails"))
+                        .username(record.get("KLU Mails").split("@")[0])
                         .employeeId(record.get("Empl Id"))
                         .designation(record.get("Designation"))
                         .phone(record.get("Contact No"))
@@ -338,10 +340,22 @@ public class UserServiceImpl implements UserService {
     @Override
     public String createUsers(List<UserDTO> facs) {
         int count = 0;
+        StringBuilder credentialsContent = new StringBuilder();
+        credentialsContent.append("# Faculty Credentials\n\n");
+        credentialsContent.append("| Name | Mail | Username | Password |\n");
+        credentialsContent.append("|------|------|----------|----------|\n");
+
         for (UserDTO fac : facs) {
             try {
                 System.out.printf("Processing faculty: %s%n", fac.toString());
-                fac.setId(createUser(fac).getId());
+
+                String generatedPassword = PasswordGenerator.generatePassword();
+                UserDTO createdUser = createUserWithPassword(fac, generatedPassword);
+                fac.setId(createdUser.getId());
+
+                credentialsContent.append(String.format("| %s | %s | %s | %s |\n",
+                        fac.getName(), fac.getEmail(), fac.getUsername(), generatedPassword));
+
                 String msg = "Created user with ID: {} for faculty: {}";
                 System.out.printf((msg) + "%n", fac.getId(), fac.getEmployeeId());
                 count++;
@@ -349,11 +363,18 @@ public class UserServiceImpl implements UserService {
                 log.error("Error in creating Faculty: {} for ID {}", e.getMessage(), fac.getEmployeeId());
             }
         }
+
+        try (FileWriter writer = new FileWriter("./y23-fac-creds.md")) {
+            writer.write(credentialsContent.toString());
+            log.info("Faculty credentials written to y23-fac-creds.md");
+        } catch (IOException e) {
+            log.error("Failed to write credentials file: {}", e.getMessage());
+        }
+
         return String.format("Processed %d faculties out of %d faculties", count, facs.size());
     }
-
     private void validateReqFields(CSVRecord record) throws Exception {
-        String[] requiredFields = {"Empl Id", "Employee Name", "Designation", "DEPT", "KLU Mail Id's", "Contact No"};
+        String[] requiredFields = {"Empl Id", "Employee Name", "Designation", "DEPT", "KLU Mails", "Contact No"};
         for (String field : requiredFields) {
             if (!record.isSet(field) || record.get(field).trim().isEmpty()) {
                 throw new Exception("Required field '" + field + "' is missing or empty");
@@ -367,7 +388,37 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private UserDTO convertToDTO(User user) {
+    private UserDTO createUserWithPassword(UserDTO createUserDTO, String password) {
+        String username = createUserDTO.getUsername().trim();
+        if(username.isBlank()) {
+            username = createUserDTO.getPhone().trim();
+        }
+        String email = createUserDTO.getEmail().trim().toLowerCase();
+
+        User user = User.builder()
+                .name(createUserDTO.getName())
+                .email(email)
+                .phone(createUserDTO.getPhone())
+                .username(username)
+                .password(passwordEncoder.encode(password))
+                .employeeId(createUserDTO.getEmployeeId())
+                .role(createUserDTO.getRole())
+                .designation((createUserDTO.getDesignation() == null) ? "Professor" : createUserDTO.getDesignation())
+                .department(createUserDTO.getDepartment())
+                .isFirstLogin(true)
+                .isActive(createUserDTO.getIsActive() != null ? createUserDTO.getIsActive() : true)
+                .build();
+
+        User savedUser = userRepository.save(user);
+        
+        try {
+            emailService.sendPasswordEmail(savedUser.getEmail(), savedUser.getUsername(), password);
+        } catch (Exception emailException) {
+            log.warn("Failed to send password email to {}: {}", savedUser.getEmail(), emailException.getMessage());
+        }
+
+        return convertToDTO(savedUser);
+    }    private UserDTO convertToDTO(User user) {
         return UserDTO.builder()
                 .id(user.getId())
                 .name(user.getName())

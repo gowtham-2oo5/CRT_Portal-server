@@ -192,7 +192,7 @@ public class StudentServiceImpl implements StudentService {
                         .email(record.get("EMAIL"))
                         .phone("000")
                         .regNum(record.get("ID"))
-                        .branch(Branch.valueOf(record.get("BRANCH").toUpperCase()))
+                        .branch(setStudentBranch(record.get("BRANCH")))
                         .batch(getStudentBatch(record.get("ID")))
                         .crtEligibility(true)
                         .section(defaultSection)
@@ -209,6 +209,17 @@ public class StudentServiceImpl implements StudentService {
             log.error("Error in bulk student creation: {}", e.getMessage());
             throw new Exception("Error processing student data: " + e.getMessage());
         }
+    }
+
+    private Branch setStudentBranch(String branch) {
+
+        return switch (branch) {
+            case "B.Com(H)" -> Branch.BComH;
+            case "M.Sc(F&C)" -> Branch.MscFC;
+            case "MTech" -> Branch.MTech;
+            default -> Branch.valueOf(branch);
+        };
+
     }
 
     private String getStudentBatch(String regNum) {
