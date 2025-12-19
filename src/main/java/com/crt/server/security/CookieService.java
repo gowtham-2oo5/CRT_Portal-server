@@ -22,7 +22,7 @@ public class CookieService {
     @Value("${jwt.cookie.secure:false}")
     private boolean secureCookie;
 
-    @Value("${jwt.cookie.domain:localhost}")
+    @Value("${jwt.cookie.domain}")
     private String cookieDomain;
 
     @Value("${jwt.cookie.path:/}")
@@ -35,16 +35,21 @@ public class CookieService {
     private long refreshExpiration;
 
     public void createAccessTokenCookie(String token, HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from(jwtCookieName, token)
-                .httpOnly(true)
-                .secure(secureCookie)
-                .domain(cookieDomain)
-                .path(cookiePath)
-                .maxAge(jwtExpiration / 1000)
-                .sameSite("None")
-                .build();
-        response.addHeader("Set-Cookie", cookie.toString());
+        ResponseCookie.ResponseCookieBuilder builder =
+                ResponseCookie.from(jwtCookieName, token)
+                        .httpOnly(true)
+                        .secure(secureCookie)
+                        .path(cookiePath)
+                        .maxAge(jwtExpiration / 1000)
+                        .sameSite("None");
+    
+        if (!"localhost".equals(cookieDomain)) {
+            builder.domain(cookieDomain);
+        }
+    
+        response.addHeader("Set-Cookie", builder.build().toString());
     }
+    
 
     public void createRefreshTokenCookie(String token, HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from(refreshCookieName, token)

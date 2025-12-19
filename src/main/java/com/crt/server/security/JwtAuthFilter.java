@@ -27,42 +27,68 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final CookieService cookieService;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+
+        String path = request.getServletPath();
+
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+        
+        return path.startsWith("/api/auth/")
+                || path.startsWith("/swagger-ui/")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/api-docs")
+                || path.startsWith("/actuator");
+    }
+
+    @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws ServletException, IOException {
-        // First try to get JWT from cookies
+            @NonNull FilterChain filterChain)
+            throws ServletException, IOException {
+
+        // 3️⃣ Extract JWT (cookie → header)
         String jwt = cookieService.getJwtFromCookies(request);
-        
-        // If not found in cookies, try Authorization header
+
         if (jwt == null || jwt.isEmpty()) {
             final String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 jwt = authHeader.substring(7);
             }
         }
-        final String username;
 
+        // 4️⃣ No token → continue (do NOT block)
         if (jwt == null || jwt.isEmpty()) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        username = jwtService.extractUsername(jwt);
+        // 5️⃣ Validate token
+        String username = jwtService.extractUsername(jwt);
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+        if (username != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
+
+            UserDetails userDetails =
+                    this.userDetailsService.loadUserByUsername(username);
 
             if (jwtService.isTokenValid(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities());
+
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities());
+
                 authToken.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request));
+
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
+
         filterChain.doFilter(request, response);
     }
 }
