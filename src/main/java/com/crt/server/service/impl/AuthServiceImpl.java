@@ -117,6 +117,8 @@ public class AuthServiceImpl implements AuthService {
         userDTO.setIsFirstLogin(wasFirst);
         return AuthResponseDTO.builder()
                 .message("OTP verified successfully")
+                .token(token)  // Include token in response
+                .refreshToken(refreshTokenString)  // Include refresh token in response
                 .user(userDTO)
                 .isFirstLogin(wasFirst)
                 .build();
