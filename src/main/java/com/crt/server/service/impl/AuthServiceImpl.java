@@ -43,6 +43,8 @@ public class AuthServiceImpl implements AuthService {
     private final CookieService cookieService;
     private final StringRedisTemplate stringRedisTemplate;
 
+    private static final java.util.Set<String> bypassMails = new java.util.HashSet<>();
+    
     static {
         bypassMails.add("admin@kluniversity.in");
     }

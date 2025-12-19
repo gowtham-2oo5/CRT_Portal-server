@@ -7,9 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
-/**
- * Service for managing HttpOnly cookies
- */
+
 @Service
 public class CookieService {
 
@@ -39,7 +37,7 @@ public class CookieService {
             .httpOnly(true)
             .secure(true)                 // production must be HTTPS
             .path("/")
-            .domain("gows.me")            // parent domain for cross-subdomain
+            // Don't set domain - let it default to the origin domain
             .maxAge(jwtExpiration / 1000)
             .sameSite("None")
             .build();
