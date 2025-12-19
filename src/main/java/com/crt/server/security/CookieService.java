@@ -35,19 +35,16 @@ public class CookieService {
     private long refreshExpiration;
 
     public void createAccessTokenCookie(String token, HttpServletResponse response) {
-        ResponseCookie.ResponseCookieBuilder builder =
-                ResponseCookie.from(jwtCookieName, token)
-                        .httpOnly(true)
-                        .secure(secureCookie)
-                        .path(cookiePath)
-                        .maxAge(jwtExpiration / 1000)
-                        .sameSite("None");
-    
-        if (!"localhost".equals(cookieDomain)) {
-            builder.domain(cookieDomain);
-        }
-    
-        response.addHeader("Set-Cookie", builder.build().toString());
+        ResponseCookie cookie = ResponseCookie.from(jwtCookieName, token)
+            .httpOnly(true)
+            .secure(true)                 // production must be HTTPS
+            .path("/")
+            .domain("gows.me")            // parent domain for cross-subdomain
+            .maxAge(jwtExpiration / 1000)
+            .sameSite("None")
+            .build();
+        
+        response.addHeader("Set-Cookie", cookie.toString());
     }
     
 
